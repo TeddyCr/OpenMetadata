@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -112,8 +114,11 @@ import org.openmetadata.schema.entity.teams.User;
 import org.openmetadata.schema.settings.Settings;
 import org.openmetadata.schema.settings.SettingsType;
 import org.openmetadata.schema.tests.TestCase;
+import org.openmetadata.schema.tests.TestCaseParameter;
 import org.openmetadata.schema.tests.TestDefinition;
 import org.openmetadata.schema.tests.TestSuite;
+import org.openmetadata.schema.tests.type.TestCaseResult;
+import org.openmetadata.schema.tests.type.TestResultValue;
 import org.openmetadata.schema.type.EntityReference;
 import org.openmetadata.schema.type.EventType;
 import org.openmetadata.schema.type.Include;
@@ -701,6 +706,23 @@ public interface CollectionDAO {
     private String type;
     private String json;
   }
+
+  @Getter
+  @Builder
+  class DataQualityResultsForExportRecord {
+      private String testCaseId;
+      private String testCaseName;
+      private String testCaseType;
+      private String testCaseEntityType;
+      private List<TestCaseParameter> testCaseParameters;
+      private Long timestamp;
+      private String entityLink;
+      private String status;
+      private Integer failedRows;
+      private Integer passedRows;
+      private List<TestResultValue> results;
+  }
+
 
   @Getter
   @Builder
@@ -3999,6 +4021,77 @@ public interface CollectionDAO {
         @Bind("jsonSchema") String jsonSchema,
         @Bind("json") String json,
         @Bind("incidentStateId") String incidentStateId);
+
+    class DataQualityResultsForExportRowMapper implements RowMapper<DataQualityResultsForExportRecord> {
+      @Override
+      public DataQualityResultsForExportRecord map(ResultSet rs, StatementContext ctx) throws SQLException {
+        ObjectMapper mapper = new ObjectMapper();
+        List<TestCaseParameter> params = null;
+        List<TestResultValue> resultValues = null;
+        try {
+          params = mapper.readValue(rs.getString("testCaseParameters"), new TypeReference<List<TestCaseParameter>>() {});
+          resultValues = mapper.readValue(rs.getString("testCaseParameters"), new TypeReference<List<TestResultValue>>() {});
+        } catch (Exception e) {
+          throw new SQLException("Error parsing testCaseParameters", e);
+        }
+
+        return new DataQualityResultsForExportRecord(
+            rs.getString("testCaseId"),
+            rs.getString("testCaseName"),
+            rs.getString("testCaseType"),
+            rs.getString("testCaseEntityType"),
+            params,
+            rs.getLong("timestamp"),
+            rs.getString("entityLink"),
+            rs.getString("status"),
+            rs.getInt("failedRows"),
+            rs.getInt("passedRows"),
+            resultValues
+        );
+      }
+    }
+
+    @ConnectionAwareSqlQuery(
+        value =
+            "SELECT tc.id AS testCaseId, "
+                + "tc.name AS testCaseName, "
+                + "td.name AS testCaseType, "
+                + "td.entityType AS testCaseEntityType, "
+                + "tc.json -> '$.parameterValues' AS testCaseParameters, "
+                + "dqdts.`timestamp` AS timestamp, "
+                + "tc.entityLink AS EntityLink, "
+                + "dqdts.json -> '$.testCaseStatus' AS status, "
+                + "dqdts.json -> '$.failedRows' AS failedRows, "
+                + "dqdts.json -> '$.passedRows' AS passedRows, "
+                + "dqdts.json -> '$.testResultValue' AS results "
+                + "FROM data_quality_data_time_series dqdts "
+                + "INNER JOIN test_case tc ON  tc.fqnHash = dqdts.entityFQNHash "
+                + "INNER JOIN entity_relationship er ON er.toId = tc.id "
+                + "INNER JOIN test_definition td ON td.id = er.fromId "
+                + "WHERE er.fromEntity = 'testDefinition' AND <cond> ",
+    connectionType = MYSQL)
+    @ConnectionAwareSqlQuery(
+            value = "SELECT tc.id AS \"testCaseId\", " +
+                    "tc.name AS \"testCaseName\", " +
+                    "td.name AS \"testCaseType\", " +
+                    "td.entityType AS \"testCaseEntityType\", " +
+                    "tc.jsonb->>'parameterValues' AS \"testCaseParameters\", " +
+                    "dqdts.\"timestamp\", " +
+                    "tc.entityLink AS \"EntityLink\", " +
+                    "dqdts.json->>'testCaseStatus' AS \"status\", " +
+                    "dqdts.json->>'failedRows' AS \"failedRows\", " +
+                    "dqdts.json->>'passedRows' AS \"passedRows\", " +
+                    "dqdts.json->>'testResultValue' AS \"results\" " +
+                    "FROM " +
+                    "data_quality_data_time_series dqdts  " +
+                    "INNER JOIN test_case tc ON tc.fqnHash = dqdts.entityFQNHash " +
+                    "INNER JOIN entity_relationship er ON er.toId = tc.id " +
+                    "INNER JOIN test_definition td ON td.id = er.fromId  " +
+                    "WHERE  " +
+                    "er.fromEntity = 'testDefinition' AND <cond>",
+            connectionType = POSTGRES)
+    @RegisterRowMapper(DataQualityResultsForExportRowMapper.class)
+    List<DataQualityResultsForExportRecord> getDataQualityResultsForExport(@Define("cond") String cond);
 
     default void insert(
         String entityFQNHash,
