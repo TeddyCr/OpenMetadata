@@ -1,0 +1,19 @@
+{
+  "name": "DataQualityResultsExporterApplication",
+  "displayName": "Data Quality Results Exporter",
+  "description": "**Data Quality Results Exporter: Export you Data Quality Results into your Warehouse**\n\n",
+  "features": "Data Quality Results Exporter. Export Data Quality Results to your Warehouse.",
+  "appType": "internal",
+  "appScreenshots": ["DataInsightsReportPic1.png"],
+  "developer": "Collate Inc.",
+  "developerUrl": "https://www.getcollate.io",
+  "privacyPolicyUrl": "https://www.getcollate.io",
+  "supportEmail": "support@getcollate.io",
+  "scheduleType": "Scheduled",
+  "permission": "All",
+  "className": "org.openmetadata.service.apps.bundles.insights.DataInsightsReportApp",
+  "runtime": {
+    "enabled": "true"
+  },
+  "appConfiguration": {}
+}

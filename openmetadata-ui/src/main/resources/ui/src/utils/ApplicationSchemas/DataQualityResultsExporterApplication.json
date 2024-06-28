@@ -1,0 +1,67 @@
+{
+  "$id": "DataQualityResultsExporterApplication.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DataQualityResultsExporterApplication",
+  "description": "This schema defines configuration for Data Exporter Application.",
+  "properties": {
+    "config": {
+      "mask": true,
+      "oneOf": [
+        {
+          "type": "object",
+          "title": "Snowflake",
+          "properties": {
+            "username": {
+              "title": "Username",
+              "description": "Username to connect to Snowflake. This user should have privileges to read all the metadata in Snowflake.",
+              "type": "string"
+            },
+            "password": {
+              "title": "Password",
+              "description": "Password to connect to Snowflake.",
+              "type": "string",
+              "format": "password"
+            },
+            "account": {
+              "title": "Account",
+              "description": "If the Snowflake URL is https://xyz1234.us-east-1.gcp.snowflakecomputing.com, then the account is xyz1234.us-east-1.gcp",
+              "type": "string"
+            },
+            "role": {
+              "title": "Role",
+              "description": "Snowflake Role.",
+              "type": "string"
+            },
+            "database": {
+              "title": "Database",
+              "description": "Database of the data source. This is optional parameter, if you would like to restrict the metadata reading to a single database. When left blank, OpenMetadata Ingestion attempts to scan all the databases.",
+              "type": "string"
+            },
+            "warehouse": {
+              "title": "Warehouse",
+              "description": "Snowflake warehouse.",
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "default": null
+    },
+    "databaseName": {
+      "type": "string",
+      "description": "Name of the database where the data quality results are stored.",
+      "default": null
+    },
+    "schemaName": {
+      "type": "string",
+      "description": "Name of the schema where the data quality results are stored.",
+      "default": null
+    },
+    "tableName": {
+      "type": "string",
+      "description": "Name of the table where the data quality results are stored.",
+      "default": null
+    }
+  },
+  "additionalProperties": false
+}
