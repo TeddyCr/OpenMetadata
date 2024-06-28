@@ -11,7 +11,7 @@
   "supportEmail": "support@getcollate.io",
   "scheduleType": "Scheduled",
   "permission": "All",
-  "className": "org.openmetadata.service.apps.bundles.insights.DataInsightsReportApp",
+  "className": "org.openmetadata.service.apps.bundles.dataQualityResultsExporter.DataQualityResultsExporter",
   "runtime": {
     "enabled": "true"
   },
