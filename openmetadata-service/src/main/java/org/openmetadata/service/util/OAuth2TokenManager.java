@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
-
 import lombok.extern.slf4j.Slf4j;
 import org.openmetadata.schema.entity.events.authentication.WebhookOAuth2Config;
 import org.openmetadata.schema.utils.JsonUtils;
@@ -68,12 +67,10 @@ public class OAuth2TokenManager {
     LOG.debug("Invalidated OAuth2 token cache entry");
   }
 
-  private String fetchAndCacheToken(
-      WebhookOAuth2Config oauth2Config, String cacheKey) {
+  private String fetchAndCacheToken(WebhookOAuth2Config oauth2Config, String cacheKey) {
     ReentrantLock lock = keyLocks.computeIfAbsent(cacheKey, k -> new ReentrantLock());
     lock.lock();
     try {
-
       CachedToken cached = tokenCache.getIfPresent(cacheKey);
       if (cached != null && !cached.isExpired()) {
         return cached.accessToken;
@@ -94,40 +91,40 @@ public class OAuth2TokenManager {
           form.param("scope", oauth2Config.getScope());
         }
 
-      try (Response response =
-          client.target(tokenUrl).request(MediaType.APPLICATION_JSON).post(Entity.form(form))) {
+        try (Response response =
+            client.target(tokenUrl).request(MediaType.APPLICATION_JSON).post(Entity.form(form))) {
 
-        if (response.getStatus() != 200) {
-          LOG.error(
-              "OAuth2 token request to {} failed with HTTP {}", tokenUrl, response.getStatus());
-          throw new OAuth2TokenException(
-              String.format(
-                  "OAuth2 token request failed with HTTP %d. Check the token URL and credentials.",
-                  response.getStatus()));
+          if (response.getStatus() != 200) {
+            LOG.error(
+                "OAuth2 token request to {} failed with HTTP {}", tokenUrl, response.getStatus());
+            throw new OAuth2TokenException(
+                String.format(
+                    "OAuth2 token request failed with HTTP %d. Check the token URL and credentials.",
+                    response.getStatus()));
+          }
+
+          String responseBody = response.readEntity(String.class);
+          Map<String, Object> tokenResponse = JsonUtils.readValue(responseBody, Map.class);
+
+          String accessToken = (String) tokenResponse.get("access_token");
+          if (accessToken == null || accessToken.isEmpty()) {
+            throw new OAuth2TokenException("OAuth2 token response missing 'access_token' field");
+          }
+
+          long expiresIn = extractExpiresIn(tokenResponse);
+          Instant expiresAt =
+              Instant.now().plusSeconds(expiresIn).minusSeconds(TOKEN_EXPIRY_BUFFER_SECONDS);
+
+          tokenCache.put(cacheKey, new CachedToken(accessToken, expiresAt));
+          LOG.debug("Successfully fetched OAuth2 token, expires in {}s", expiresIn);
+
+          return accessToken;
         }
-
-        String responseBody = response.readEntity(String.class);
-        Map<String, Object> tokenResponse = JsonUtils.readValue(responseBody, Map.class);
-
-        String accessToken = (String) tokenResponse.get("access_token");
-        if (accessToken == null || accessToken.isEmpty()) {
-          throw new OAuth2TokenException("OAuth2 token response missing 'access_token' field");
-        }
-
-        long expiresIn = extractExpiresIn(tokenResponse);
-        Instant expiresAt =
-            Instant.now().plusSeconds(expiresIn).minusSeconds(TOKEN_EXPIRY_BUFFER_SECONDS);
-
-        tokenCache.put(cacheKey, new CachedToken(accessToken, expiresAt));
-        LOG.debug("Successfully fetched OAuth2 token, expires in {}s", expiresIn);
-
-        return accessToken;
       }
     } finally {
-        lock.unlock();
+      lock.unlock();
     }
   }
-    }
 
   private static long extractExpiresIn(Map<String, Object> tokenResponse) {
     Object expiresInObj = tokenResponse.get("expires_in");

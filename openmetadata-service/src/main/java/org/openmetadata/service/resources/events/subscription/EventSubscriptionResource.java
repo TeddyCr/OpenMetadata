@@ -1541,10 +1541,14 @@ public class EventSubscriptionResource
         && WebhookOAuth2Config.Type.OAUTH_2.value().equals(authMap.get("type"))) {
       WebhookOAuth2Config oauth2Config =
           JsonUtils.convertValue(webhookConfig.getAuthType(), WebhookOAuth2Config.class);
+      String tokenUrl =
+          oauth2Config == null || oauth2Config.getTokenUrl() == null
+              ? null
+              : oauth2Config.getTokenUrl().toString();
       if (oauth2Config == null
-          || oauth2Config.getTokenUrl() == null
-          || oauth2Config.getClientId() == null
-          || oauth2Config.getClientSecret() == null) {
+          || nullOrEmpty(tokenUrl)
+          || nullOrEmpty(oauth2Config.getClientId())
+          || nullOrEmpty(oauth2Config.getClientSecret())) {
         throw new WebApplicationException(
             "OAuth2 configuration requires tokenUrl, clientId, and clientSecret",
             Response.Status.BAD_REQUEST);

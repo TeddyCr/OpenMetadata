@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.jdbi.v3.core.Handle;
+import org.openmetadata.schema.entity.events.SubscriptionDestination;
 import org.openmetadata.schema.utils.JsonUtils;
 import org.openmetadata.service.resources.databases.DatasourceConfig;
 
@@ -39,13 +40,24 @@ public class MigrationUtil {
 
         boolean modified = false;
         for (JsonNode destination : destinations) {
+          String destinationType =
+              destination.get("type") != null
+                  ? destination.get("type").asText().toLowerCase()
+                  : null;
+          if (destinationType == null
+              || !destinationType.equals(
+                  SubscriptionDestination.SubscriptionType.WEBHOOK.value().toLowerCase())) {
+            continue;
+          }
           JsonNode config = destination.get("config");
           if (config == null || !config.isObject()) {
             continue;
           }
 
           JsonNode secretKeyNode = config.get("secretKey");
-          if (secretKeyNode == null || secretKeyNode.isNull()) {
+          if (secretKeyNode == null
+              || secretKeyNode.isNull()
+              || secretKeyNode.asText().trim().isEmpty()) {
             continue;
           }
 

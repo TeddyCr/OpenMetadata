@@ -71,8 +71,7 @@
         {
           "$ref": "./authentication/webhookOAuth2Config.json"
         }
-      ],
-      "default": {}
+      ]
     },
     "sendToFollowers": {
       "description": "Send the Event to Followers",
