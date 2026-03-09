@@ -94,15 +94,16 @@ public class OAuth2TokenManager {
           form.param("scope", oauth2Config.getScope());
         }
 
-        Response response =
-                client.target(tokenUrl).request(MediaType.APPLICATION_JSON).post(Entity.form(form));
+      try (Response response =
+          client.target(tokenUrl).request(MediaType.APPLICATION_JSON).post(Entity.form(form))) {
 
         if (response.getStatus() != 200) {
-          LOG.error("OAuth2 token request to {} failed with HTTP {}", tokenUrl, response.getStatus());
+          LOG.error(
+              "OAuth2 token request to {} failed with HTTP {}", tokenUrl, response.getStatus());
           throw new OAuth2TokenException(
-                  String.format(
-                          "OAuth2 token request failed with HTTP %d. Check the token URL and credentials.",
-                          response.getStatus()));
+              String.format(
+                  "OAuth2 token request failed with HTTP %d. Check the token URL and credentials.",
+                  response.getStatus()));
         }
 
         String responseBody = response.readEntity(String.class);
@@ -115,7 +116,7 @@ public class OAuth2TokenManager {
 
         long expiresIn = extractExpiresIn(tokenResponse);
         Instant expiresAt =
-                Instant.now().plusSeconds(expiresIn).minusSeconds(TOKEN_EXPIRY_BUFFER_SECONDS);
+            Instant.now().plusSeconds(expiresIn).minusSeconds(TOKEN_EXPIRY_BUFFER_SECONDS);
 
         tokenCache.put(cacheKey, new CachedToken(accessToken, expiresAt));
         LOG.debug("Successfully fetched OAuth2 token, expires in {}s", expiresIn);
@@ -126,6 +127,7 @@ public class OAuth2TokenManager {
         lock.unlock();
     }
   }
+    }
 
   private static long extractExpiresIn(Map<String, Object> tokenResponse) {
     Object expiresInObj = tokenResponse.get("expires_in");
