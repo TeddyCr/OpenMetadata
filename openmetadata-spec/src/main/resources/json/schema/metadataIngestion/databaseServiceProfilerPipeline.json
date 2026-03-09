@@ -108,7 +108,7 @@
     "threadCount": {
       "description": "Number of threads to use during metric computations",
       "type": "number",
-      "default": 5,
+      "default": null,
       "title": "Thread Count"
     },
     "timeoutSeconds": {
