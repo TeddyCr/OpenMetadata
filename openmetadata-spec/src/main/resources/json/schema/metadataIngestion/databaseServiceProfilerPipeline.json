@@ -107,8 +107,8 @@
     },
     "threadCount": {
       "description": "Number of threads to use during metric computations",
-      "type": "number",
-      "default": null,
+      "type": ["integer", "null"],
+      "default": 5,
       "title": "Thread Count"
     },
     "timeoutSeconds": {
