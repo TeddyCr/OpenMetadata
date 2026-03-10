@@ -96,7 +96,7 @@ class SQAProfilerInterface(ProfilerInterface, SQAInterfaceMixin):
         entity: Table,
         source_config: DatabaseServiceProfilerPipeline,
         sampler: SamplerInterface,
-        thread_count: int = 5,
+        thread_count: Optional[int],
         timeout_seconds: int = 43200,
         **kwargs,
     ):
@@ -137,13 +137,13 @@ class SQAProfilerInterface(ProfilerInterface, SQAInterfaceMixin):
             task_counts = len(MetricFilter.filter_empty_metrics(metric_funcs))
             min_threads = min(MIN_THREADS, task_counts)
             effective_thread_count = min(
-                MAX_THREADS, max(min_threads, task_counts // 3)
+                MAX_THREADS, max(min_threads, (task_counts // 3) or 1)
             )
             logger.debug(
                 f"Calculated effective thread count: {effective_thread_count} for {task_counts} tasks."
             )
 
-        return effective_thread_count
+        return int(effective_thread_count)
 
     def _session_factory(self) -> scoped_session:
         """Create thread safe session that will be automatically
