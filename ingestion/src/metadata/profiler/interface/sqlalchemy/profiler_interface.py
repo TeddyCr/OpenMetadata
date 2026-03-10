@@ -70,6 +70,8 @@ thread_local = threading.local()
 OVERFLOW_ERROR_CODES = {
     "snowflake": {100046, 100058},
 }
+MAX_THREADS = 20
+MIN_THREADS = 5
 
 
 def handle_query_exception(msg, exc, session):
@@ -125,6 +127,23 @@ class SQAProfilerInterface(ProfilerInterface, SQAInterfaceMixin):
     @property
     def table(self):
         return self._table
+
+    def _get_effective_thread_count(self, metric_funcs: List[ThreadPoolMetrics]) -> int:
+        """Given the number of tasks to perform return a dynamic thread count.
+        If the thread count is explicitly set by the user, we will use that.
+        """
+        effective_thread_count = self._thread_count
+        if not effective_thread_count:
+            task_counts = len(MetricFilter.filter_empty_metrics(metric_funcs))
+            min_threads = min(MIN_THREADS, task_counts)
+            effective_thread_count = min(
+                MAX_THREADS, max(min_threads, task_counts // 3)
+            )
+            logger.debug(
+                f"Calculated effective thread count: {effective_thread_count} for {task_counts} tasks."
+            )
+
+        return effective_thread_count
 
     def _session_factory(self) -> scoped_session:
         """Create thread safe session that will be automatically
@@ -507,9 +526,10 @@ class SQAProfilerInterface(ProfilerInterface, SQAInterfaceMixin):
         metric_funcs: list,
     ):
         """get all profiler metrics"""
-        logger.debug(f"Computing metrics with {self._thread_count} threads.")
+        thread_count = self._get_effective_thread_count(metric_funcs)
+        logger.debug(f"Computing metrics with {thread_count} threads.")
         profile_results = {"table": dict(), "columns": defaultdict(dict)}
-        with CustomThreadPoolExecutor(max_workers=self._thread_count) as pool:
+        with CustomThreadPoolExecutor(max_workers=thread_count) as pool:
             futures = [
                 pool.submit(
                     self.compute_metrics_in_thread,
