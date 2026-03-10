@@ -456,6 +456,7 @@ export const getDestinationConfigField = (
                         name={[fieldName, 'config', 'authType', 'type']}
                       >
                         <Select
+                          className="w-full"
                           data-testid={`auth-type-select-${fieldName}`}
                           options={[
                             {
