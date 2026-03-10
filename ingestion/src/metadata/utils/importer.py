@@ -23,7 +23,6 @@ from metadata.data_quality.validations.base_test_handler import BaseTestValidato
 from metadata.generated.schema.entity.services.connections.metadata.openMetadataConnection import (
     OpenMetadataConnection,
 )
-from metadata.utils.importer import DynamicImportException,
 from metadata.generated.schema.entity.services.serviceType import ServiceType
 from metadata.generated.schema.metadataIngestion.workflow import Sink as WorkflowSink
 from metadata.ingestion.api.steps import BulkSink, Processor, Sink, Stage
@@ -132,7 +131,7 @@ def import_from_module(key: str, log_traceback: bool = True) -> Type[Any]:
     try:
         obj = getattr(importlib.import_module(module_name), obj_name)
         return obj
-    except (ModuleNotFoundError, ImportError, DynamicImportException) as err:
+    except (ModuleNotFoundError, ImportError) as err:
         if log_traceback:
             logger.debug(traceback.format_exc())
         raise DynamicImportException(module=module_name, key=obj_name, cause=err)
