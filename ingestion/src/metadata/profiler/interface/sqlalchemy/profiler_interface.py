@@ -131,19 +131,37 @@ class SQAProfilerInterface(ProfilerInterface, SQAInterfaceMixin):
     def _get_effective_thread_count(self, metric_funcs: List[ThreadPoolMetrics]) -> int:
         """Given the number of tasks to perform return a dynamic thread count.
         If the thread count is explicitly set by the user, we will use that.
-        """
-        effective_thread_count = self._thread_count
-        if not effective_thread_count:
-            task_counts = len(MetricFilter.filter_empty_metrics(metric_funcs))
-            min_threads = min(MIN_THREADS, task_counts)
-            effective_thread_count = min(
-                MAX_THREADS, max(min_threads, (task_counts // 3) or 1)
-            )
-            logger.debug(
-                f"Calculated effective thread count: {effective_thread_count} for {task_counts} tasks."
-            )
 
-        return int(effective_thread_count)
+        This method clamps user-provided values to [1, MAX_THREADS]. If thread_count
+        is falsy (None or 0), it will be auto-calculated based on task count.
+        """
+        # If user provided an explicit thread count, coerce and clamp it
+        if self._thread_count:
+            try:
+                user_count = int(self._thread_count)
+            except (TypeError, ValueError):
+                logger.warning(
+                    "Provided threadCount is not an integer. Falling back to auto-calculation."
+                )
+                user_count = None
+
+            if user_count is not None:
+                clamped = max(1, min(MAX_THREADS, user_count))
+                if clamped != user_count:
+                    logger.debug(
+                        f"Clamped threadCount from {user_count} to {clamped} (allowed range 1-{MAX_THREADS})."
+                    )
+                return clamped
+
+        # Auto-calculate based on task count
+        task_counts = len(MetricFilter.filter_empty_metrics(metric_funcs))
+        min_threads = min(MIN_THREADS, task_counts)
+        calculated = min(MAX_THREADS, max(min_threads, (task_counts // 3) or 1))
+        logger.debug(
+            f"Calculated effective thread count: {calculated} for {task_counts} tasks."
+        )
+
+        return int(calculated)
 
     def _session_factory(self) -> scoped_session:
         """Create thread safe session that will be automatically
