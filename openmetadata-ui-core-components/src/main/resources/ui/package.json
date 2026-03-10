@@ -32,12 +32,11 @@
       "import": "./dist/utils/index.es.js",
       "require": "./dist/utils/index.cjs.js"
     },
-    "./styles.css": "./dist/ui-core-components.css",
-    "./theme.css": "./src/styles/theme.css"
+    "./globals.css": "./src/styles/globals.css"
   },
   "files": [
     "dist",
-    "src/styles/theme.css",
+    "src/styles/globals.css",
     "README.md",
     "LICENSE"
   ],
@@ -139,8 +138,7 @@
   },
   "resolutions": {
     "rollup": "4.59.0",
-    "@storybook/react-vite/minimatch": "9.0.7",
-    "vite-plugin-dts/minimatch": "10.2.3"
+    "minimatch": "10.2.3"
   },
   "publishConfig": {
     "access": "restricted",
