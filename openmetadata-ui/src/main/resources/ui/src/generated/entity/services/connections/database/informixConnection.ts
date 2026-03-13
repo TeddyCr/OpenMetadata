@@ -17,11 +17,9 @@ export interface InformixConnection {
     connectionArguments?: { [key: string]: any };
     connectionOptions?:   { [key: string]: string };
     /**
-     * Database of the data source. This is an optional parameter, if you would like to restrict
-     * the metadata reading to a single database. If left blank, OpenMetadata ingestion attempts
-     * to scan all the databases.
+     * Database of the data source.
      */
-    database?: string;
+    database: string;
     /**
      * Regex to only include/exclude databases that matches the pattern.
      */
