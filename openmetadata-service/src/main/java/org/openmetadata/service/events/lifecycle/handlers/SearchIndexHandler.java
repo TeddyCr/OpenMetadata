@@ -13,7 +13,6 @@
 
 package org.openmetadata.service.events.lifecycle.handlers;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -220,7 +219,7 @@ public class SearchIndexHandler implements EntityLifecycleEventHandler {
     LOG.debug("Search index handler: Updating search indexes for {} entities", entities.size());
 
     try {
-      searchRepository.updateEntitiesIndex(new ArrayList<>(entities));
+      searchRepository.updateEntitiesIndex(entities);
       LOG.debug("Successfully updated search indexes for {} entities", entities.size());
     } catch (Exception e) {
       LOG.error("Failed to bulk update search indexes for {} entities", entities.size(), e);

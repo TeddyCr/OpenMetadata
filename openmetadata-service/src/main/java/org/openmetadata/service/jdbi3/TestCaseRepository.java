@@ -92,9 +92,7 @@ import org.openmetadata.schema.type.csv.CsvImportResult;
 import org.openmetadata.schema.utils.EntityInterfaceUtil;
 import org.openmetadata.schema.utils.JsonUtils;
 import org.openmetadata.service.Entity;
-import org.openmetadata.service.events.lifecycle.EntityLifecycleEventDispatcher;
 import org.openmetadata.service.exception.EntityNotFoundException;
-import org.openmetadata.service.rdf.RdfUpdater;
 import org.openmetadata.service.resources.dqtests.TestCaseResource;
 import org.openmetadata.service.resources.dqtests.TestSuiteMapper;
 import org.openmetadata.service.resources.feeds.MessageParser;
@@ -923,9 +921,7 @@ public class TestCaseRepository extends EntityRepository<TestCase> {
             .toList();
 
     List<TestCase> updatedTestCases = getLogicalSuiteUpdatedTestCase(testCaseReferences);
-    writeThroughCacheMany(updatedTestCases, true);
-    EntityLifecycleEventDispatcher.getInstance().onEntitiesUpdated(updatedTestCases, null, null);
-    updatedTestCases.forEach(RdfUpdater::updateEntity);
+    postUpdateMany(updatedTestCases);
     updateLogicalTestSuite(testSuite.getId());
     return new RestUtil.PutResponse<>(Response.Status.OK, testSuite, LOGICAL_TEST_CASE_ADDED);
   }
@@ -937,15 +933,23 @@ public class TestCaseRepository extends EntityRepository<TestCase> {
     List<EntityReference> originalTestCaseReferences =
         findTo(testSuite.getId(), TEST_SUITE, Relationship.CONTAINS, TEST_CASE);
 
-    daoCollection
-        .relationshipDAO()
-        .bulkInsertAllToRelationship(
-            excludedTestCaseIds,
-            testSuite.getId(),
-            TEST_SUITE,
-            TEST_CASE,
-            Relationship.CONTAINS.ordinal(),
-            daoCollection.testCaseDAO().getTableName());
+    String tableName = daoCollection.testCaseDAO().getTableName();
+    if (nullOrEmpty(excludedTestCaseIds)) {
+      daoCollection
+          .relationshipDAO()
+          .bulkInsertAllToRelationship(
+              testSuite.getId(), TEST_SUITE, TEST_CASE, Relationship.CONTAINS.ordinal(), tableName);
+    } else {
+      daoCollection
+          .relationshipDAO()
+          .bulkInsertAllToRelationshipWithExclusions(
+              excludedTestCaseIds.stream().map(UUID::toString).toList(),
+              testSuite.getId(),
+              TEST_SUITE,
+              TEST_CASE,
+              Relationship.CONTAINS.ordinal(),
+              tableName);
+    }
 
     List<EntityReference> updatedTestCaseReferences =
         findTo(testSuite.getId(), TEST_SUITE, Relationship.CONTAINS, TEST_CASE);
@@ -958,9 +962,7 @@ public class TestCaseRepository extends EntityRepository<TestCase> {
             .toList();
 
     List<TestCase> updatedTestCases = getLogicalSuiteUpdatedTestCase(testCaseReferences);
-    writeThroughCacheMany(updatedTestCases, true);
-    EntityLifecycleEventDispatcher.getInstance().onEntitiesUpdated(updatedTestCases, null, null);
-    updatedTestCases.forEach(RdfUpdater::updateEntity);
+    postUpdateMany(updatedTestCases);
     updateLogicalTestSuite(testSuite.getId());
 
     return new RestUtil.PutResponse<>(Response.Status.OK, testSuite, LOGICAL_TEST_CASE_ADDED);

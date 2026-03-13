@@ -2125,6 +2125,15 @@ public abstract class EntityRepository<T extends EntityInterface> {
     RdfUpdater.updateEntity(updated);
   }
 
+  protected void postUpdateMany(List<T> entities) {
+    if (entities == null || entities.isEmpty()) {
+      return;
+    }
+    writeThroughCacheMany(entities, true);
+    EntityLifecycleEventDispatcher.getInstance().onEntitiesUpdated(entities, null, null);
+    entities.forEach(RdfUpdater::updateEntity);
+  }
+
   @Transaction
   public final PutResponse<T> update(UriInfo uriInfo, T original, T updated, String updatedBy) {
     return update(uriInfo, original, updated, updatedBy, null);

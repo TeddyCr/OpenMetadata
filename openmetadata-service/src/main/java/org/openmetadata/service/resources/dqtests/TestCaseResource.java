@@ -1173,7 +1173,14 @@ public class TestCaseResource extends EntityResource<TestCase, TestCaseRepositor
       throw new IllegalArgumentException(
           "You are trying to add one or more test cases that do not exist.");
     }
-    return repository.addTestCasesToLogicalTestSuite(testSuite, testCaseIds).toResponse();
+    return Response.fromResponse(
+            repository.addTestCasesToLogicalTestSuite(testSuite, testCaseIds).toResponse())
+        .header("Deprecation", "true")
+        .header(
+            "Sunset",
+            "This endpoint will be removed in version 2.0. "
+                + "Use PUT /api/v1/dataQuality/testCases/logicalTestCases/bulk instead.")
+        .build();
   }
 
   @PUT
@@ -1212,7 +1219,8 @@ public class TestCaseResource extends EntityResource<TestCase, TestCaseRepositor
     }
     if (mode.equals(BundleSuiteBulkAddRequest.Mode.IDS)) {
       BundleSuiteBulkAddRequestBulkByIds bulkByIds =
-          (BundleSuiteBulkAddRequestBulkByIds) bundleSuiteBulkAddRequest.getSelection();
+          JsonUtils.convertValue(
+              bundleSuiteBulkAddRequest.getSelection(), BundleSuiteBulkAddRequestBulkByIds.class);
       List<UUID> testCaseIds = bulkByIds.getIds();
       if (testCaseIds == null || testCaseIds.isEmpty()) {
         return new RestUtil.PutResponse<>(Response.Status.OK, testSuite, ENTITY_NO_CHANGE)
