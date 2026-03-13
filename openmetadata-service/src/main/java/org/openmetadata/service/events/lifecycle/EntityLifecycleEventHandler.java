@@ -13,8 +13,8 @@
 
 package org.openmetadata.service.events.lifecycle;
 
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import org.openmetadata.schema.EntityInterface;
 import org.openmetadata.schema.type.ChangeDescription;
