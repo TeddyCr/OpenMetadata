@@ -11,12 +11,7 @@
  *  limitations under the License.
  */
 
-import {
-  Checkbox,
-  TableCell,
-  TableRow,
-  useTheme,
-} from '@mui/material';
+import { Checkbox, TableCell, TableRow, useTheme } from '@mui/material';
 import React, { useMemo } from 'react';
 import Loader from '../../../../components/common/Loader/Loader';
 import { ColumnGridRowData } from '../ColumnGrid.interface';

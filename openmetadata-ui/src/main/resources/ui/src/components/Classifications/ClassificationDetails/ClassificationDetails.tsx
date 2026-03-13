@@ -65,6 +65,7 @@ import { NextPreviousProps } from '../../common/NextPrevious/NextPrevious.interf
 import Table from '../../common/Table/Table';
 import { GenericProvider } from '../../Customization/GenericProvider/GenericProvider';
 import { DomainLabelV2 } from '../../DataAssets/DomainLabelV2/DomainLabelV2';
+import Loader from '../../common/Loader/Loader';
 import { OwnerLabelV2 } from '../../DataAssets/OwnerLabelV2/OwnerLabelV2';
 import EntityHeaderTitle from '../../Entity/EntityHeaderTitle/EntityHeaderTitle.component';
 import './classification-details.less';
@@ -474,75 +475,78 @@ const ClassificationDetails = forwardRef(
           </Row>
         )}
 
-        <GenericProvider<Classification>
-          data={(currentClassification as Classification) ?? {}}
-          isVersionView={isVersionView}
-          permissions={classificationPermissions}
-          type={EntityType.CLASSIFICATION as CustomizeEntityType}
-          onUpdate={(updatedData: Classification) =>
-            Promise.resolve(handleUpdateClassification?.(updatedData))
-          }>
-          <Row className="m-t-md" gutter={16}>
-            <Col span={18}>
-              <Card className="classification-details-card">
-                <div className="m-b-sm" data-testid="description-container">
-                  <DescriptionV1
-                    wrapInCard
-                    description={description}
-                    entityName={getEntityName(currentClassification)}
-                    entityType={EntityType.CLASSIFICATION}
-                    hasEditAccess={editDescriptionPermission}
-                    isDescriptionExpanded={isEmpty(tags)}
-                    showCommentsIcon={false}
-                    onDescriptionUpdate={handleUpdateDescription}
-                  />
-                </div>
+        {!currentClassification && isClassificationLoading && <Loader />}
+        {currentClassification && (
+          <GenericProvider<Classification>
+            data={currentClassification}
+            isVersionView={isVersionView}
+            permissions={classificationPermissions}
+            type={EntityType.CLASSIFICATION as CustomizeEntityType}
+            onUpdate={(updatedData: Classification) =>
+              Promise.resolve(handleUpdateClassification?.(updatedData))
+            }>
+            <Row className="m-t-md" gutter={16}>
+              <Col span={18}>
+                <Card className="classification-details-card">
+                  <div className="m-b-sm" data-testid="description-container">
+                    <DescriptionV1
+                      wrapInCard
+                      description={description}
+                      entityName={getEntityName(currentClassification)}
+                      entityType={EntityType.CLASSIFICATION}
+                      hasEditAccess={editDescriptionPermission}
+                      isDescriptionExpanded={isEmpty(tags)}
+                      showCommentsIcon={false}
+                      onDescriptionUpdate={handleUpdateDescription}
+                    />
+                  </div>
 
-                <Table
-                  columns={tableColumn}
-                  customPaginationProps={{
-                    currentPage,
-                    isLoading,
-                    pageSize,
-                    paging,
-                    showPagination,
-                    pagingHandler: handleTagsPageChange,
-                    onShowSizeChange: handlePageSizeChange,
-                  }}
-                  data-testid="table"
-                  dataSource={tags}
-                  loading={isLoading}
-                  locale={{
-                    emptyText: (
-                      <ErrorPlaceHolder
-                        className="m-y-md"
-                        placeholderText={t('message.no-tags-description')}
-                      />
-                    ),
-                  }}
-                  pagination={false}
-                  rowKey="id"
-                  scroll={{ x: true }}
-                  size="small"
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <div className="d-flex flex-column gap-5">
-                <DomainLabelV2
-                  multiple
-                  showDomainHeading
-                  hasPermission={editDomainPermission}
-                />
-                <OwnerLabelV2
-                  dataTestId="classification-owner-name"
-                  hasPermission={editOwnerPermission}
-                />
-                {tagClassBase.getClassificationReviewerWidget()}
-              </div>
-            </Col>
-          </Row>
-        </GenericProvider>
+                  <Table
+                    columns={tableColumn}
+                    customPaginationProps={{
+                      currentPage,
+                      isLoading,
+                      pageSize,
+                      paging,
+                      showPagination,
+                      pagingHandler: handleTagsPageChange,
+                      onShowSizeChange: handlePageSizeChange,
+                    }}
+                    data-testid="table"
+                    dataSource={tags}
+                    loading={isLoading}
+                    locale={{
+                      emptyText: (
+                        <ErrorPlaceHolder
+                          className="m-y-md"
+                          placeholderText={t('message.no-tags-description')}
+                        />
+                      ),
+                    }}
+                    pagination={false}
+                    rowKey="id"
+                    scroll={{ x: true }}
+                    size="small"
+                  />
+                </Card>
+              </Col>
+              <Col span={6}>
+                <div className="d-flex flex-column gap-5">
+                  <DomainLabelV2
+                    multiple
+                    showDomainHeading
+                    hasPermission={editDomainPermission}
+                  />
+                  <OwnerLabelV2
+                    dataTestId="classification-owner-name"
+                    hasPermission={editOwnerPermission}
+                  />
+                  {tagClassBase.getClassificationReviewerWidget()}
+                </div>
+              </Col>
+            </Row>
+          </GenericProvider>
+        )}
       </div>
     );
   }
