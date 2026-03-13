@@ -264,10 +264,7 @@ class EntityLifecycleEventDispatcherTest {
     dispatcher.registerHandler(allEntitiesHandler);
 
     EntityInterface dashboardEntity = mock(EntityInterface.class);
-    EntityReference dashboardEntityRef = mock(EntityReference.class);
     ChangeDescription dashboardChangeDescription = mock(ChangeDescription.class);
-    when(dashboardEntity.getEntityReference()).thenReturn(dashboardEntityRef);
-    when(dashboardEntityRef.getType()).thenReturn(Entity.DASHBOARD);
     when(dashboardEntity.getChangeDescription()).thenReturn(dashboardChangeDescription);
 
     dispatcher.onEntitiesUpdated(List.of(mockEntity, dashboardEntity), null, mockSubjectContext);

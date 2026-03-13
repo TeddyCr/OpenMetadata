@@ -1213,10 +1213,6 @@ public class TestCaseResource extends EntityResource<TestCase, TestCaseRepositor
 
     validateTestSuiteOps(testSuite, securityContext);
     BundleSuiteBulkAddRequest.Mode mode = bundleSuiteBulkAddRequest.getMode();
-    if (nullOrEmpty(mode)) {
-      throw new IllegalArgumentException(
-          "Mode is required and should be one of the following: [ids, all].");
-    }
     if (mode.equals(BundleSuiteBulkAddRequest.Mode.IDS)) {
       BundleSuiteBulkAddRequestBulkByIds bulkByIds =
           JsonUtils.convertValue(

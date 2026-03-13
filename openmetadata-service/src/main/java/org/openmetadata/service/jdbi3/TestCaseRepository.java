@@ -25,6 +25,7 @@ import static org.openmetadata.service.exception.CatalogExceptionMessage.entityN
 import static org.openmetadata.service.exception.CatalogExceptionMessage.notReviewer;
 import static org.openmetadata.service.security.mask.PIIMasker.maskSampleData;
 
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import jakarta.json.JsonPatch;
 import jakarta.ws.rs.core.Response;
@@ -956,13 +957,16 @@ public class TestCaseRepository extends EntityRepository<TestCase> {
 
     Set<UUID> originalIds =
         originalTestCaseReferences.stream().map(EntityReference::getId).collect(Collectors.toSet());
-    List<EntityReference> testCaseReferences =
+    List<EntityReference> newTestCaseReferences =
         updatedTestCaseReferences.stream()
             .filter(ref -> !originalIds.contains(ref.getId()))
             .toList();
 
-    List<TestCase> updatedTestCases = getLogicalSuiteUpdatedTestCase(testCaseReferences);
-    postUpdateMany(updatedTestCases);
+    int batchSize = 100;
+    for (List<EntityReference> batch : Lists.partition(newTestCaseReferences, batchSize)) {
+      List<TestCase> updatedTestCases = getLogicalSuiteUpdatedTestCase(batch);
+      postUpdateMany(updatedTestCases);
+    }
     updateLogicalTestSuite(testSuite.getId());
 
     return new RestUtil.PutResponse<>(Response.Status.OK, testSuite, LOGICAL_TEST_CASE_ADDED);
