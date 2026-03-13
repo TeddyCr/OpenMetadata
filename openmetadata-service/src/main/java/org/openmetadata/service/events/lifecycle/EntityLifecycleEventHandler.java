@@ -13,8 +13,8 @@
 
 package org.openmetadata.service.events.lifecycle;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Collections;
 import java.util.Set;
 import org.openmetadata.schema.EntityInterface;
 import org.openmetadata.schema.type.ChangeDescription;
@@ -67,6 +67,16 @@ public interface EntityLifecycleEventHandler {
    */
   default void onEntityUpdated(EntityReference entityRef, SubjectContext subjectContext) {
     // Default empty implementation
+  }
+
+  /**
+   * Called after multiple entities are successfully created in bulk.
+   * Default implementation delegates to individual onEntityCreated calls.
+   */
+  default void onEntitiesCreated(List<EntityInterface> entities, SubjectContext subjectContext) {
+    for (EntityInterface entity : entities) {
+      onEntityCreated(entity, subjectContext);
+    }
   }
 
   /**
