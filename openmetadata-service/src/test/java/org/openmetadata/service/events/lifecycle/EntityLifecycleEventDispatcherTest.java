@@ -16,6 +16,8 @@ package org.openmetadata.service.events.lifecycle;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -257,6 +259,32 @@ class EntityLifecycleEventDispatcherTest {
   }
 
   @Test
+  void testOnEntitiesUpdatedUsesEntitySpecificChangeDescriptions() {
+    TestHandler tableHandler = new TestHandler("TableHandler", 100, false, Set.of(Entity.TABLE));
+    TestHandler dashboardHandler =
+        new TestHandler("DashboardHandler", 100, false, Set.of(Entity.DASHBOARD));
+    dispatcher.registerHandler(tableHandler);
+    dispatcher.registerHandler(dashboardHandler);
+
+    EntityInterface dashboardEntity = mock(EntityInterface.class);
+    EntityReference dashboardEntityRef = mock(EntityReference.class);
+    ChangeDescription dashboardChangeDescription = mock(ChangeDescription.class);
+    when(dashboardEntity.getEntityReference()).thenReturn(dashboardEntityRef);
+    when(dashboardEntityRef.getType()).thenReturn(Entity.DASHBOARD);
+    when(dashboardEntity.getChangeDescription()).thenReturn(dashboardChangeDescription);
+
+    dispatcher.onEntitiesUpdated(List.of(mockEntity, dashboardEntity), null, mockSubjectContext);
+
+    assertEquals(1, tableHandler.updatedCallCount);
+    assertSame(mockEntity, tableHandler.lastUpdatedEntity);
+    assertSame(mockChangeDescription, tableHandler.lastChangeDescription);
+
+    assertEquals(1, dashboardHandler.updatedCallCount);
+    assertSame(dashboardEntity, dashboardHandler.lastUpdatedEntity);
+    assertSame(dashboardChangeDescription, dashboardHandler.lastChangeDescription);
+  }
+
+  @Test
   void testOnEntityDeleted() {
     dispatcher.registerHandler(syncHandler);
     dispatcher.onEntityDeleted(mockEntity, mockSubjectContext);
@@ -309,12 +337,14 @@ class EntityLifecycleEventDispatcherTest {
     boolean updatedCalled = false;
     boolean deletedCalled = false;
     boolean softDeletedOrRestoredCalled = false;
+    int updatedCallCount = 0;
 
     EntityInterface lastCreatedEntity;
     EntityInterface lastUpdatedEntity;
     EntityInterface lastDeletedEntity;
     ChangeDescription lastChangeDescription;
     boolean lastIsDeleted;
+    List<ChangeDescription> receivedChangeDescriptions = new ArrayList<>();
 
     TestHandler(String name, int priority, boolean async, Set<String> supportedEntityTypes) {
       this.name = name;
@@ -335,8 +365,10 @@ class EntityLifecycleEventDispatcherTest {
         ChangeDescription changeDescription,
         SubjectContext subjectContext) {
       updatedCalled = true;
+      updatedCallCount++;
       lastUpdatedEntity = entity;
       lastChangeDescription = changeDescription;
+      receivedChangeDescriptions.add(changeDescription);
     }
 
     @Override
@@ -377,11 +409,13 @@ class EntityLifecycleEventDispatcherTest {
       updatedCalled = false;
       deletedCalled = false;
       softDeletedOrRestoredCalled = false;
+      updatedCallCount = 0;
       lastCreatedEntity = null;
       lastUpdatedEntity = null;
       lastDeletedEntity = null;
       lastChangeDescription = null;
       lastIsDeleted = false;
+      receivedChangeDescriptions.clear();
     }
   }
 }

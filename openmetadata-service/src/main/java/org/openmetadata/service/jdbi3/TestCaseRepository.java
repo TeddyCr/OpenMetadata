@@ -92,7 +92,9 @@ import org.openmetadata.schema.type.csv.CsvImportResult;
 import org.openmetadata.schema.utils.EntityInterfaceUtil;
 import org.openmetadata.schema.utils.JsonUtils;
 import org.openmetadata.service.Entity;
+import org.openmetadata.service.events.lifecycle.EntityLifecycleEventDispatcher;
 import org.openmetadata.service.exception.EntityNotFoundException;
+import org.openmetadata.service.rdf.RdfUpdater;
 import org.openmetadata.service.resources.dqtests.TestCaseResource;
 import org.openmetadata.service.resources.dqtests.TestSuiteMapper;
 import org.openmetadata.service.resources.feeds.MessageParser;
@@ -908,18 +910,11 @@ public class TestCaseRepository extends EntityRepository<TestCase> {
       TestSuite testSuite, List<UUID> testCaseIds) {
     bulkAddToRelationship(
         testSuite.getId(), testCaseIds, TEST_SUITE, TEST_CASE, Relationship.CONTAINS);
-    for (UUID testCaseId : testCaseIds) {
-      TestCase testCase = Entity.getEntity(Entity.TEST_CASE, testCaseId, "*", Include.ALL);
-      ChangeDescription change =
-          new ChangeDescription()
-              .withFieldsUpdated(
-                  List.of(
-                      new FieldChange()
-                          .withName("testSuites")
-                          .withNewValue(testCase.getTestSuites())));
-      testCase.setChangeDescription(change);
-      postUpdate(testCase, testCase);
-    }
+    List<TestCase> updatedTestCases =
+        testCaseIds.stream().map(this::getLogicalSuiteUpdatedTestCase).toList();
+    writeThroughCacheMany(updatedTestCases, true);
+    EntityLifecycleEventDispatcher.getInstance().onEntitiesUpdated(updatedTestCases, null, null);
+    updatedTestCases.forEach(RdfUpdater::updateEntity);
     updateLogicalTestSuite(testSuite.getId());
     return new RestUtil.PutResponse<>(Response.Status.OK, testSuite, LOGICAL_TEST_CASE_ADDED);
   }
@@ -944,6 +939,19 @@ public class TestCaseRepository extends EntityRepository<TestCase> {
     testCase.setTestSuite(updatedTestCase.getTestSuite());
     testCase.setTestSuites(updatedTestCase.getTestSuites());
     return new RestUtil.DeleteResponse<>(testCase, ENTITY_DELETED);
+  }
+
+  private TestCase getLogicalSuiteUpdatedTestCase(UUID testCaseId) {
+    TestCase testCase = Entity.getEntity(Entity.TEST_CASE, testCaseId, "*", Include.ALL);
+    ChangeDescription change =
+        new ChangeDescription()
+            .withFieldsUpdated(
+                List.of(
+                    new FieldChange()
+                        .withName("testSuites")
+                        .withNewValue(testCase.getTestSuites())));
+    testCase.setChangeDescription(change);
+    return testCase;
   }
 
   @Override

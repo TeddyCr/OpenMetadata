@@ -13,6 +13,7 @@
 
 package org.openmetadata.service.events.lifecycle.handlers;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -198,6 +199,38 @@ public class SearchIndexHandler implements EntityLifecycleEventHandler {
       LOG.info("Falling back to individual entity indexing");
       for (EntityInterface entity : entities) {
         onEntityCreated(entity, subjectContext);
+      }
+    }
+  }
+
+  /**
+   * Handle bulk entity updates to the search index. Prefer bulk update API on
+   * SearchRepository and fall back to per-entity updates on failure.
+   */
+  @Override
+  public void onEntitiesUpdated(
+      List<? extends EntityInterface> entities,
+      ChangeDescription changeDescription,
+      SubjectContext subjectContext) {
+    if (entities == null || entities.isEmpty()) {
+      LOG.warn("Received null entities in onEntitiesUpdated");
+      return;
+    }
+
+    LOG.debug("Search index handler: Updating search indexes for {} entities", entities.size());
+
+    try {
+      searchRepository.updateEntitiesIndex(new ArrayList<>(entities));
+      LOG.debug("Successfully updated search indexes for {} entities", entities.size());
+    } catch (Exception e) {
+      LOG.error("Failed to bulk update search indexes for {} entities", entities.size(), e);
+      for (EntityInterface entity : entities) {
+        onEntityUpdated(
+            entity,
+            entity.getChangeDescription() != null
+                ? entity.getChangeDescription()
+                : changeDescription,
+            subjectContext);
       }
     }
   }
