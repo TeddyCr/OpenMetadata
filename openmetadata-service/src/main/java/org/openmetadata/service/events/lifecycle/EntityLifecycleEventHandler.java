@@ -13,7 +13,6 @@
 
 package org.openmetadata.service.events.lifecycle;
 
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;

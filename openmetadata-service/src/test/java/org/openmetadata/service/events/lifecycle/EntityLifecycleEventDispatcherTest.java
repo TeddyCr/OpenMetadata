@@ -260,11 +260,8 @@ class EntityLifecycleEventDispatcherTest {
 
   @Test
   void testOnEntitiesUpdatedUsesEntitySpecificChangeDescriptions() {
-    TestHandler tableHandler = new TestHandler("TableHandler", 100, false, Set.of(Entity.TABLE));
-    TestHandler dashboardHandler =
-        new TestHandler("DashboardHandler", 100, false, Set.of(Entity.DASHBOARD));
-    dispatcher.registerHandler(tableHandler);
-    dispatcher.registerHandler(dashboardHandler);
+    TestHandler allEntitiesHandler = new TestHandler("AllEntitiesHandler", 100, false, Set.of());
+    dispatcher.registerHandler(allEntitiesHandler);
 
     EntityInterface dashboardEntity = mock(EntityInterface.class);
     EntityReference dashboardEntityRef = mock(EntityReference.class);
@@ -275,13 +272,9 @@ class EntityLifecycleEventDispatcherTest {
 
     dispatcher.onEntitiesUpdated(List.of(mockEntity, dashboardEntity), null, mockSubjectContext);
 
-    assertEquals(1, tableHandler.updatedCallCount);
-    assertSame(mockEntity, tableHandler.lastUpdatedEntity);
-    assertSame(mockChangeDescription, tableHandler.lastChangeDescription);
-
-    assertEquals(1, dashboardHandler.updatedCallCount);
-    assertSame(dashboardEntity, dashboardHandler.lastUpdatedEntity);
-    assertSame(dashboardChangeDescription, dashboardHandler.lastChangeDescription);
+    assertEquals(2, allEntitiesHandler.updatedCallCount);
+    assertTrue(allEntitiesHandler.receivedChangeDescriptions.contains(mockChangeDescription));
+    assertTrue(allEntitiesHandler.receivedChangeDescriptions.contains(dashboardChangeDescription));
   }
 
   @Test

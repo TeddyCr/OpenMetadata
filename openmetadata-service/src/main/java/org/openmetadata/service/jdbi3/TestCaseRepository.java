@@ -908,14 +908,61 @@ public class TestCaseRepository extends EntityRepository<TestCase> {
   @Transaction
   public RestUtil.PutResponse<TestSuite> addTestCasesToLogicalTestSuite(
       TestSuite testSuite, List<UUID> testCaseIds) {
+    List<EntityReference> originalTestCaseReferences =
+        findTo(testSuite.getId(), TEST_SUITE, Relationship.CONTAINS, TEST_CASE);
     bulkAddToRelationship(
         testSuite.getId(), testCaseIds, TEST_SUITE, TEST_CASE, Relationship.CONTAINS);
-    List<TestCase> updatedTestCases =
-        testCaseIds.stream().map(this::getLogicalSuiteUpdatedTestCase).toList();
+
+    List<EntityReference> updatedTestCaseReferences =
+        findTo(testSuite.getId(), TEST_SUITE, Relationship.CONTAINS, TEST_CASE);
+    Set<UUID> originalIds =
+        originalTestCaseReferences.stream().map(EntityReference::getId).collect(Collectors.toSet());
+    List<EntityReference> testCaseReferences =
+        updatedTestCaseReferences.stream()
+            .filter(ref -> !originalIds.contains(ref.getId()))
+            .toList();
+
+    List<TestCase> updatedTestCases = getLogicalSuiteUpdatedTestCase(testCaseReferences);
     writeThroughCacheMany(updatedTestCases, true);
     EntityLifecycleEventDispatcher.getInstance().onEntitiesUpdated(updatedTestCases, null, null);
     updatedTestCases.forEach(RdfUpdater::updateEntity);
     updateLogicalTestSuite(testSuite.getId());
+    return new RestUtil.PutResponse<>(Response.Status.OK, testSuite, LOGICAL_TEST_CASE_ADDED);
+  }
+
+  @Transaction
+  public RestUtil.PutResponse<TestSuite> addAllTestCasesToLogicalTestSuite(
+      TestSuite testSuite, List<UUID> excludedTestCaseIds) {
+
+    List<EntityReference> originalTestCaseReferences =
+        findTo(testSuite.getId(), TEST_SUITE, Relationship.CONTAINS, TEST_CASE);
+
+    daoCollection
+        .relationshipDAO()
+        .bulkInsertAllToRelationship(
+            excludedTestCaseIds,
+            testSuite.getId(),
+            TEST_SUITE,
+            TEST_CASE,
+            Relationship.CONTAINS.ordinal(),
+            daoCollection.testCaseDAO().getTableName());
+
+    List<EntityReference> updatedTestCaseReferences =
+        findTo(testSuite.getId(), TEST_SUITE, Relationship.CONTAINS, TEST_CASE);
+
+    Set<UUID> originalIds =
+        originalTestCaseReferences.stream().map(EntityReference::getId).collect(Collectors.toSet());
+    List<EntityReference> testCaseReferences =
+        updatedTestCaseReferences.stream()
+            .filter(ref -> !originalIds.contains(ref.getId()))
+            .toList();
+
+    List<TestCase> updatedTestCases = getLogicalSuiteUpdatedTestCase(testCaseReferences);
+    writeThroughCacheMany(updatedTestCases, true);
+    EntityLifecycleEventDispatcher.getInstance().onEntitiesUpdated(updatedTestCases, null, null);
+    updatedTestCases.forEach(RdfUpdater::updateEntity);
+    updateLogicalTestSuite(testSuite.getId());
+
     return new RestUtil.PutResponse<>(Response.Status.OK, testSuite, LOGICAL_TEST_CASE_ADDED);
   }
 
@@ -941,17 +988,20 @@ public class TestCaseRepository extends EntityRepository<TestCase> {
     return new RestUtil.DeleteResponse<>(testCase, ENTITY_DELETED);
   }
 
-  private TestCase getLogicalSuiteUpdatedTestCase(UUID testCaseId) {
-    TestCase testCase = Entity.getEntity(Entity.TEST_CASE, testCaseId, "*", Include.ALL);
-    ChangeDescription change =
-        new ChangeDescription()
-            .withFieldsUpdated(
-                List.of(
-                    new FieldChange()
-                        .withName("testSuites")
-                        .withNewValue(testCase.getTestSuites())));
-    testCase.setChangeDescription(change);
-    return testCase;
+  private List<TestCase> getLogicalSuiteUpdatedTestCase(List<EntityReference> testCaseReferences) {
+    List<TestCase> testCases = Entity.getEntities(testCaseReferences, "*", Include.ALL);
+    testCases.forEach(
+        tc -> {
+          ChangeDescription change =
+              new ChangeDescription()
+                  .withFieldsUpdated(
+                      List.of(
+                          new FieldChange()
+                              .withName("testSuites")
+                              .withNewValue(tc.getTestSuites())));
+          tc.setChangeDescription(change);
+        });
+    return testCases;
   }
 
   @Override
