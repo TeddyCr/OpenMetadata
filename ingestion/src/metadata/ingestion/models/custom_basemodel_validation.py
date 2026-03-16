@@ -22,7 +22,6 @@ RESTRICTED_KEYWORDS = ["::", ">"]
 RESERVED_COLON_KEYWORD = "__reserved__colon__"
 RESERVED_ARROW_KEYWORD = "__reserved__arrow__"
 RESERVED_QUOTE_KEYWORD = "__reserved__quote__"
-COLUMN_NAME_MAX_LENGTH = 256
 
 
 class TransformDirection(Enum):
