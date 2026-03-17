@@ -91,6 +91,7 @@ class PythonDialects(Enum):
     Trino = "trino"
     UnityCatalog = "unitycatalog"
     Vertica = "vertica"
+    Timescale = "timescale"
 
 
 class EnumAdapter(type):
