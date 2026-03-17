@@ -928,11 +928,8 @@ class TableMetricComputer:
         metric computer. We detect this by checking the connection config type.
         """
         if dialect == Dialects.Postgres:
-            try:
-                if isinstance(conn_config, TimescaleConnectionConfig):
-                    return "timescale"
-            except ImportError:
-                pass
+            if isinstance(conn_config, TimescaleConnectionConfig):
+                return "timescale"
         return dialect
 
     def compute(self):
