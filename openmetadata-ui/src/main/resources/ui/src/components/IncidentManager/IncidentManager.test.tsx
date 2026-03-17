@@ -499,6 +499,77 @@ describe('IncidentManagerPage', () => {
     expect(screen.getByText('label.table')).toBeInTheDocument();
   });
 
+  it('should render date field selector with Created At selected by default', async () => {
+    await act(async () => {
+      render(<IncidentManager />);
+    });
+
+    const dateFieldSelect = await screen.findByTestId('date-field-select');
+
+    expect(dateFieldSelect).toBeInTheDocument();
+  });
+
+  it('should update URL with dateField when date type is changed', async () => {
+    const mockUseNavigate = require('react-router-dom').useNavigate;
+    const navigate = jest.fn();
+    mockUseNavigate.mockReturnValue(navigate);
+
+    await act(async () => {
+      render(<IncidentManager />);
+    });
+
+    const dateFieldSelect = await screen.findByTestId('date-field-select');
+    const selectBox = dateFieldSelect.querySelector('.ant-select-selector');
+
+    expect(selectBox).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.mouseDown(selectBox!);
+    });
+
+    const updatedAtOption = await screen.findByText('label.updated-at');
+
+    await act(async () => {
+      fireEvent.click(updatedAtOption);
+    });
+
+    expect(navigate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        search: expect.stringContaining('dateField=updatedAt'),
+      }),
+      expect.anything()
+    );
+  });
+
+  it('should fetch incidents with dateField from URL params', async () => {
+    const mockUseCustomLocation = require('../../hooks/useCustomLocation/useCustomLocation');
+    mockUseCustomLocation.mockImplementation(() => ({
+      search: QueryString.stringify({
+        endTs: 1710161424255,
+        startTs: 1709556624254,
+        dateField: 'updatedAt',
+      }),
+    }));
+
+    const mockGetListTestCaseIncidentStatus =
+      getListTestCaseIncidentStatusFromSearch as jest.Mock;
+    await act(async () => {
+      render(<IncidentManager />);
+    });
+
+    expect(mockGetListTestCaseIncidentStatus).toHaveBeenCalledWith({
+      endTs: 1710161424255,
+      latest: true,
+      limit: 10,
+      offset: 0,
+      startTs: 1709556624254,
+      dateField: 'updatedAt',
+      include: 'non-deleted',
+      domain: undefined,
+      originEntityFQN: undefined,
+    });
+  });
+
   describe('pagination', () => {
     beforeEach(() => {
       const usePagingModule = require('../../hooks/paging/usePaging');

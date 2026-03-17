@@ -427,6 +427,13 @@ const IncidentManager = ({
     }
   };
 
+  const handleDateFieldChange = useCallback(
+    (value: 'timestamp' | 'updatedAt') => {
+      updateFilters({ dateField: value });
+    },
+    [updateFilters]
+  );
+
   const handleDateRangeClear = useCallback(() => {
     const updatedFilters = omit(allParams, [
       'startTs',
@@ -749,14 +756,31 @@ const IncidentManager = ({
           </Form.Item>
           {isDateRangePickerVisible && (
             <Form.Item className="m-b-0" label={t('label.date')}>
-              <MuiDatePickerMenu
-                allowClear
-                showSelectedCustomRange
-                defaultDateRange={dateRangeKey}
-                handleDateRangeChange={handleDateRangeChange}
-                size="small"
-                onClear={handleDateRangeClear}
-              />
+              <div className="tw:flex tw:items-center tw:gap-2">
+                <Select
+                  className="w-min-10"
+                  data-testid="date-field-select"
+                  value={
+                    (filters.dateField as 'timestamp' | 'updatedAt') ??
+                    'timestamp'
+                  }
+                  onChange={handleDateFieldChange}>
+                  <Select.Option value="timestamp">
+                    {t('label.created-at')}
+                  </Select.Option>
+                  <Select.Option value="updatedAt">
+                    {t('label.updated-at')}
+                  </Select.Option>
+                </Select>
+                <MuiDatePickerMenu
+                  allowClear
+                  showSelectedCustomRange
+                  defaultDateRange={dateRangeKey}
+                  handleDateRangeChange={handleDateRangeChange}
+                  size="small"
+                  onClear={handleDateRangeClear}
+                />
+              </div>
             </Form.Item>
           )}
         </div>
