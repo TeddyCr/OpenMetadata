@@ -156,9 +156,9 @@ def transform_all_names(obj, transformer):
     # Transform name field if it exists (supports both obj.name.root and obj.root)
     name = getattr(obj, "name", None)
     if name and hasattr(name, "root") and name.root is not None:
-        name.root = transformer(transformer(name.root), transformer)
+        name.root = transformer(name.root)
     elif hasattr(obj, "root") and obj.root is not None:
-        obj.root = transformer(transformer(obj.root), transformer)
+        obj.root = transformer(obj.root)
 
     # Transform nested collections in a single loop each
     for attr_name in ["columns", "children"]:
@@ -175,12 +175,11 @@ def transform_all_names(obj, transformer):
             for constraint in table_constraints:
                 if hasattr(constraint, "columns"):
                     constraint.columns = [
-                        transformer(transformer(col), transformer)
-                        for col in constraint.columns
+                        transformer(col) for col in constraint.columns
                     ]
 
     if transformer == replace_separators and type(name) == str:
-        obj.name = transformer(transformer(name), transformer)
+        obj.name = transformer(name)
 
 
 def transform_entity_names(entity: Any, model: Optional[Any]) -> Any:
