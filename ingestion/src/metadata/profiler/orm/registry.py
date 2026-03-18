@@ -88,10 +88,10 @@ class PythonDialects(Enum):
     SQLite = "sqlite"
     Snowflake = "snowflake"
     Teradata = "teradatasql"
+    Timescale = "timescale"
     Trino = "trino"
     UnityCatalog = "unitycatalog"
     Vertica = "vertica"
-    Timescale = "timescale"
 
 
 class EnumAdapter(type):

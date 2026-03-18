@@ -14,8 +14,9 @@ instead of scanning the entire hypertable (including compressed data that
 requires expensive decompression).
 """
 from datetime import datetime
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Union
 
+from pydantic import BaseModel
 from sqlalchemy import Column, select, text
 from sqlalchemy.orm.util import AliasedClass
 
@@ -29,8 +30,8 @@ from metadata.generated.schema.entity.services.connections.database.datalakeConn
 from metadata.generated.schema.entity.services.databaseService import DatabaseConnection
 from metadata.ingestion.ometa.ometa_api import OpenMetadata
 from metadata.ingestion.source.database.timescale.queries import (
+    TIMESCALE_GET_COMPRESSION_INFO,
     TIMESCALE_GET_TIME_DIMENSION,
-    TIMESCALE_GET_UNCOMPRESSED_BOUNDARY,
 )
 from metadata.sampler.models import SampleConfig
 from metadata.sampler.sqlalchemy.postgres.sampler import PostgresSampler
@@ -38,6 +39,14 @@ from metadata.utils.constants import SAMPLE_DATA_DEFAULT_COUNT
 from metadata.utils.logger import profiler_interface_registry_logger
 
 logger = profiler_interface_registry_logger()
+
+
+class HypertableMeta(BaseModel):
+    """Compression metadata for a TimescaleDB hypertable."""
+
+    time_column: str
+    has_compressed: bool
+    uncompressed_boundary: Optional[datetime] = None
 
 
 class TimescaleSampler(PostgresSampler):
@@ -75,19 +84,23 @@ class TimescaleSampler(PostgresSampler):
             sample_data_count=sample_data_count,
             **kwargs,
         )
-        self._hypertable_meta: Optional[Tuple[str, Optional[datetime]]] = None
+        self._hypertable_meta: Optional[HypertableMeta] = None
         self._hypertable_checked = False
 
     def _get_hypertable_sampling_boundary(
         self,
     ) -> None:
-        """Query TimescaleDB metadata to get the time dimension column and the
-        oldest uncompressed chunk boundary for this hypertable.
+        """Query TimescaleDB metadata to get the time dimension column and
+        compression info for this hypertable.
 
-        Returns:
-            A tuple of (time_column_name, uncompressed_boundary_timestamp) if the
-            table is a hypertable, or None if it is a regular table.
-            The boundary is None when all chunks are uncompressed.
+        Sets ``_hypertable_meta`` to a tuple of
+        ``(time_column, has_compressed, uncompressed_boundary)`` when the table
+        is a hypertable, or leaves it as ``None`` for regular tables.
+
+        ``has_compressed`` is True only when at least one chunk is compressed.
+        ``uncompressed_boundary`` is the earliest uncompressed chunk start, or
+        None when all chunks are compressed (meaning there is no uncompressed
+        data to profile).
         """
         if self._hypertable_checked:
             return
@@ -105,27 +118,35 @@ class TimescaleSampler(PostgresSampler):
                 ).first()
 
                 if not ht_result:
-                    return None
+                    return
 
                 time_column = ht_result[0]
 
-                boundary_result = session.execute(
-                    text(TIMESCALE_GET_UNCOMPRESSED_BOUNDARY), params
+                comp_result = session.execute(
+                    text(TIMESCALE_GET_COMPRESSION_INFO), params
                 ).first()
 
+                has_compressed = (
+                    comp_result.has_compressed
+                    if comp_result and comp_result.has_compressed
+                    else False
+                )
                 boundary_ts = (
-                    boundary_result[0]
-                    if boundary_result and boundary_result[0]
+                    comp_result.uncompressed_boundary
+                    if comp_result and comp_result.uncompressed_boundary
                     else None
                 )
 
-                self._hypertable_meta = (time_column, boundary_ts)
+                self._hypertable_meta = HypertableMeta(
+                    time_column=time_column,
+                    has_compressed=has_compressed,
+                    uncompressed_boundary=boundary_ts,
+                )
                 logger.debug(
-                    "Hypertable %s.%s: time_column=%s, uncompressed_boundary=%s",
+                    "Hypertable %s.%s: %s",
                     schema_name,
                     table_name,
-                    time_column,
-                    boundary_ts,
+                    self._hypertable_meta,
                 )
 
         except Exception:
@@ -136,23 +157,34 @@ class TimescaleSampler(PostgresSampler):
             )
 
     def _has_compressed_chunks(self) -> bool:
+        """Return True only when the hypertable has at least one compressed chunk."""
         self._get_hypertable_sampling_boundary()
         return (
-            self._hypertable_meta is not None and self._hypertable_meta[1] is not None
+            self._hypertable_meta is not None
+            and self._hypertable_meta.has_compressed is True
         )
 
     def _get_uncompressed_dataset(self):
         """Return raw_dataset filtered to uncompressed chunks only.
 
-        If the table is not a hypertable or has no compressed chunks,
-        returns raw_dataset unchanged.
+        If the table is not a hypertable, has no compressed chunks, or all
+        chunks are compressed (no uncompressed boundary), returns raw_dataset
+        unchanged.
         """
         if not self._has_compressed_chunks() or self._hypertable_meta is None:
             return self.raw_dataset
 
-        time_col_name, boundary_ts = self._hypertable_meta
+        if self._hypertable_meta.uncompressed_boundary is None:
+            logger.debug(
+                "All chunks are compressed for %s — skipping uncompressed "
+                "filter, profiling will require decompression",
+                self.raw_dataset.__tablename__,
+            )
+            return self.raw_dataset
+
         stmt = select(self.raw_dataset).where(
-            self.raw_dataset.__table__.c[time_col_name] >= boundary_ts
+            self.raw_dataset.__table__.c[self._hypertable_meta.time_column]
+             >= self._hypertable_meta.uncompressed_boundary
         )
         return stmt.cte(f"{self.get_sampler_table_name()}_uncompressed")
 
@@ -179,6 +211,8 @@ class TimescaleSampler(PostgresSampler):
         if not self._has_compressed_chunks():
             return query
 
-        time_col_name, boundary_ts = self._hypertable_meta
-        time_column = self.raw_dataset.__table__.c[time_col_name]
-        return query.filter(time_column >= boundary_ts)
+        if self._hypertable_meta.uncompressed_boundary is None:
+            return query
+
+        time_column = self.raw_dataset.__table__.c[self._hypertable_meta.time_column]
+        return query.filter(time_column >= self._hypertable_meta.uncompressed_boundary)

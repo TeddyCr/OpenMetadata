@@ -40,7 +40,10 @@ from metadata.generated.schema.entity.data.table import TableType
 from metadata.generated.schema.entity.services.connections.database.timescaleConnection import (
     TimescaleConnection as TimescaleConnectionConfig,
 )
-from metadata.ingestion.source.database.timescale.queries import TIMESCALE_IS_HYPERTABLE
+from metadata.ingestion.source.database.timescale.queries import (
+    TIMESCALE_GET_APPROXIMATE_METRICS,
+    TIMESCALE_IS_HYPERTABLE,
+)
 from metadata.profiler.metrics.registry import Metrics
 from metadata.profiler.orm.registry import Dialects
 from metadata.profiler.processor.runner import QueryRunner
@@ -484,12 +487,6 @@ class TimescaleTableMetricComputer(PostgresTableMetricComputer):
         if not self._is_hypertable():
             return super().compute()
         try:
-            from sqlalchemy import text as sa_text
-
-            from metadata.ingestion.source.database.timescale.queries import (
-                TIMESCALE_GET_APPROXIMATE_METRICS,
-            )
-
             fqn = f'"{self.schema_name}"."{self.table_name}"'
             result = self.runner._session.execute(
                 sa_text(TIMESCALE_GET_APPROXIMATE_METRICS),

@@ -94,12 +94,13 @@ WHERE ht.hypertable_schema = :schema
   AND ht.hypertable_name = :table
 """
 
-TIMESCALE_GET_UNCOMPRESSED_BOUNDARY = """
-SELECT MIN(range_start::timestamptz)
+TIMESCALE_GET_COMPRESSION_INFO = """
+SELECT
+    bool_or(is_compressed) AS has_compressed,
+    MIN(range_start::timestamptz) FILTER (WHERE NOT is_compressed) AS uncompressed_boundary
 FROM timescaledb_information.chunks
 WHERE hypertable_schema = :schema
   AND hypertable_name = :table
-  AND NOT is_compressed
 """
 
 TIMESCALE_CHECK_EXTENSION = """
