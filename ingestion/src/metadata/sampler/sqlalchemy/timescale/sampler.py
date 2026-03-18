@@ -184,7 +184,7 @@ class TimescaleSampler(PostgresSampler):
 
         stmt = select(self.raw_dataset).where(
             self.raw_dataset.__table__.c[self._hypertable_meta.time_column]
-             >= self._hypertable_meta.uncompressed_boundary
+            >= self._hypertable_meta.uncompressed_boundary
         )
         return stmt.cte(f"{self.get_sampler_table_name()}_uncompressed")
 

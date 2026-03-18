@@ -26,6 +26,14 @@ from datetime import datetime, timezone
 from sqlalchemy import Column, DateTime, Integer, String
 from sqlalchemy.orm import DeclarativeBase
 
+from metadata.generated.schema.entity.services.connections.database.postgresConnection import (
+    PostgresConnection as PostgresConnectionConfig,
+)
+from metadata.generated.schema.entity.services.connections.database.timescaleConnection import (
+    TimescaleConnection as TimescaleConnectionConfig,
+)
+from metadata.profiler.orm.functions.table_metric_computer import TableMetricComputer
+from metadata.profiler.orm.registry import Dialects
 from metadata.sampler.sqlalchemy.timescale.sampler import TimescaleSampler
 
 TimeDimensionRow = namedtuple("TimeDimensionRow", ["column_name"])
@@ -182,3 +190,38 @@ class TestHasCompressedChunks:
         assert result2 is True
         # If it queried twice, the second call would fail with IndexError
         # since query_results only has 2 entries for 2 queries (one invocation).
+
+
+class TestResolveDialect:
+    def test_timescale_connection_resolves_to_timescale(self):
+        ts_config = TimescaleConnectionConfig(
+            hostPort="localhost:5432", username="test", database="testdb"
+        )
+        assert (
+            TableMetricComputer._resolve_dialect(Dialects.Postgres, ts_config)
+            == "timescale"
+        )
+
+    def test_postgres_connection_stays_postgres(self):
+        pg_config = PostgresConnectionConfig(
+            hostPort="localhost:5432", username="test", database="testdb"
+        )
+        assert (
+            TableMetricComputer._resolve_dialect(Dialects.Postgres, pg_config)
+            == Dialects.Postgres
+        )
+
+    def test_non_postgres_dialect_unchanged(self):
+        ts_config = TimescaleConnectionConfig(
+            hostPort="localhost:5432", username="test", database="testdb"
+        )
+        assert (
+            TableMetricComputer._resolve_dialect(Dialects.MySQL, ts_config)
+            == Dialects.MySQL
+        )
+
+    def test_none_conn_config(self):
+        assert (
+            TableMetricComputer._resolve_dialect(Dialects.Postgres, None)
+            == Dialects.Postgres
+        )

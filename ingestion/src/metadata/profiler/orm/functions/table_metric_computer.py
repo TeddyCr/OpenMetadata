@@ -926,7 +926,7 @@ class TableMetricComputer:
         """
         if dialect == Dialects.Postgres:
             if isinstance(conn_config, TimescaleConnectionConfig):
-                return "timescale"
+                return Dialects.Timescale
         return dialect
 
     def compute(self):
