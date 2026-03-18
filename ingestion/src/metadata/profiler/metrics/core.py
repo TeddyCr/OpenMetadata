@@ -17,8 +17,6 @@ Metric Core definitions
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from functools import wraps
-from typing import Any, Callable, Dict, Optional, Tuple, TypeVar
 
 from sqlalchemy import Column
 from sqlalchemy.orm import Session
@@ -112,13 +110,6 @@ class Metric(ABC):
         # We allow to pass any metric specific kwarg
         for key, value in kwargs.items():
             self.__setattr__(key, value)
-
-    @classmethod
-    @abstractmethod
-    def name(cls) -> str:
-        """
-        Metric name. Follow JSON Schema specifications
-        """
 
     @classmethod
     def is_col_metric(cls) -> bool:
