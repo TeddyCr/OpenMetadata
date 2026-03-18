@@ -9,7 +9,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -32,7 +31,6 @@ import org.openmetadata.sdk.client.OpenMetadataClient;
 import org.openmetadata.sdk.models.ListParams;
 import org.openmetadata.sdk.models.ListResponse;
 
-@Slf4j
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class IncidentPaginationIT {
 
@@ -115,7 +113,6 @@ public class IncidentPaginationIT {
                 }
                 return false;
               } catch (Exception e) {
-                LOG.warn("waitForDataIndexed poll failed: {}", e.getMessage());
                 return false;
               }
             });
