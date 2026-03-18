@@ -34,6 +34,7 @@ public class McpAuthFilter implements Filter {
     if (ApplicationContext.getInstance().getAppIfExists("McpApplication") == null) {
       sendError(
           httpServletResponse,
+          HttpServletResponse.SC_SERVICE_UNAVAILABLE,
           "McpApplication is not installed please install it to use MCP features.");
       return;
     }
@@ -45,33 +46,27 @@ public class McpAuthFilter implements Filter {
       String token = JwtFilter.extractToken(tokenWithType);
       Map<String, Claim> claims = jwtFilter.validateJwtAndGetClaims(token);
 
-      // Extract impersonatedBy claim if present
-      String impersonatedBy =
-          claims.containsKey(JwtFilter.IMPERSONATED_USER_CLAIM)
-              ? claims.get(JwtFilter.IMPERSONATED_USER_CLAIM).asString()
-              : null;
-
-      // Set impersonatedBy in thread-local context for MCP tools to use
-      if (impersonatedBy != null) {
-        ImpersonationContext.setImpersonatedBy(impersonatedBy);
-      }
-
       checkForUsernameAndImpersonationValidation(token, claims, jwtFilter);
 
       // Continue with the filter chain
       filterChain.doFilter(servletRequest, servletResponse);
+    } catch (Exception e) {
+      sendError(httpServletResponse, HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
     } finally {
-      // Always clear the impersonation context after request processing
+      // Clear any impersonation context set during JWT validation on this (Jetty) thread.
+      // MCP bot impersonation is set and cleared on the Reactor boundedElastic thread
+      // inside McpServer.getTool() — that cleanup is independent of this one.
       ImpersonationContext.clear();
     }
   }
 
-  private void sendError(HttpServletResponse response, String errorMessage) throws IOException {
+  private void sendError(HttpServletResponse response, int statusCode, String errorMessage)
+      throws IOException {
     Map<String, Object> error = new HashMap<>();
     error.put("error", errorMessage);
     String errorJson = JsonUtils.pojoToJson(error);
     response.setContentType("application/json");
-    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+    response.setStatus(statusCode);
     response.getWriter().write(errorJson);
   }
 }
