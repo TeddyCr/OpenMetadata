@@ -2,7 +2,7 @@ package org.openmetadata.service.search.opensearch.aggregations;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Base64;
+import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Getter;
@@ -57,8 +57,8 @@ public class OpenFilterAggregations implements OpenAggregations {
         }
       }
 
-      String base64Query = Base64.getEncoder().encodeToString(queryToProcess.getBytes());
-      this.filterQuery = Query.of(q -> q.wrapper(w -> w.query(base64Query)));
+      final String finalQueryToProcess = queryToProcess;
+      this.filterQuery = Query.of(q -> q.withJson(new StringReader(finalQueryToProcess)));
       this.aggregation = Aggregation.of(a -> a.filter(this.filterQuery));
     } catch (Exception e) {
       throw new IllegalArgumentException("Invalid filter query JSON: " + queryJson, e);
