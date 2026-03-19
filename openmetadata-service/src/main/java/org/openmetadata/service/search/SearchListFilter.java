@@ -407,8 +407,7 @@ public class SearchListFilter extends Filter<SearchListFilter> {
     String dateField = getQueryParam("dateField");
 
     if (startTimestamp != null && endTimestamp != null) {
-      String esDateField =
-          "updatedAt".equals(dateField) ? "updatedAt" : "@timestamp";
+      String esDateField = "updatedAt".equals(dateField) ? "updatedAt" : "@timestamp";
       conditions.add(getTimestampFilter(esDateField, "gte", Long.parseLong(startTimestamp)));
       conditions.add(getTimestampFilter(esDateField, "lte", Long.parseLong(endTimestamp)));
     }
