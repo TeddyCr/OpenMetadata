@@ -24,12 +24,17 @@ echo "Setting up ANTLR4..."
 # Ensure user-local binaries are available for this script and child processes.
 export PATH="$HOME/.local/bin:$PATH"
 
-if ! command -v antlr4 &> /dev/null; then
-  ANTLR_VERSION=4.9.2
-  ANTLR_JAR_DIR="$HOME/.local/lib"
-  ANTLR_JAR_PATH="$ANTLR_JAR_DIR/antlr-${ANTLR_VERSION}-complete.jar"
-  ANTLR_BIN_PATH="$HOME/.local/bin/antlr4"
+ANTLR_VERSION=4.9.2
+ANTLR_JAR_DIR="$HOME/.local/lib"
+ANTLR_JAR_PATH="$ANTLR_JAR_DIR/antlr-${ANTLR_VERSION}-complete.jar"
+ANTLR_BIN_PATH="$HOME/.local/bin/antlr4"
 
+CURRENT_ANTLR_VERSION=""
+if command -v antlr4 &> /dev/null; then
+  CURRENT_ANTLR_VERSION="$(antlr4 -version 2>&1 | awk '{print $NF}')"
+fi
+
+if [ "$CURRENT_ANTLR_VERSION" != "$ANTLR_VERSION" ]; then
   if ! command -v java &> /dev/null; then
     echo "ERROR: Java runtime is required to run ANTLR."
     exit 1
