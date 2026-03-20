@@ -66,12 +66,9 @@ fi
 
 echo "Running python version: $($PYTHON_BIN --version)"
 
-# Use a dedicated fallback venv in container contexts to avoid deleting host .venv.
-VENV_DIR=".venv"
-if [ -d .venv ] && [ ! -x .venv/bin/python ]; then
-  VENV_DIR=".venv-devcontainer"
-  echo "Detected stale or incompatible .venv; using $VENV_DIR instead."
-fi
+# Always use a dedicated venv in the devcontainer to avoid overwriting the host .venv
+# (which is volume-mounted and likely contains platform-incompatible binaries).
+VENV_DIR=".venv-devcontainer"
 
 "$PYTHON_BIN" -m venv "$VENV_DIR"
 source "$VENV_DIR/bin/activate"
