@@ -10,7 +10,8 @@ on:
         required: false
 
 permissions:                                                                                                                              
-    pull-requests: write  
+  pull-requests: write  
+
 jobs:
   stale:
     runs-on: ubuntu-latest
