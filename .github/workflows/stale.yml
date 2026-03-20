@@ -2,7 +2,7 @@ name: Close Stale PRs
 
 on:
   schedule:
-    - cron: '0 9 * * 1'  # Runs 9AM UTC on mondays
+    - cron: '0 9 * * *'  # Runs daily at 9AM UTC
   workflow_dispatch:
 
 permissions:
