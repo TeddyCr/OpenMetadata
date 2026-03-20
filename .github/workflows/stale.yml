@@ -1,0 +1,35 @@
+name: Close Stale PRs
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Runs 9AM UTC on mondays
+  workflow_dispatch:
+    inputs:
+      run_reason:
+        description: "Reason for running the workflow"
+        required: true
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          
+          # PRs only (disable for issues)
+          stale-issue-message: ''
+          close-issue-message: ''
+          days-before-issue-stale: -1
+          days-before-issue-close: -1
+          
+          # PR settings
+          days-before-pr-stale: 14       # Mark stale after 14 days
+          days-before-pr-close: 1       # Close 1 day after marking
+          stale-pr-message: |
+            This PR has had no activity for 14 days and is being closed automatically.
+            Feel free to reopen it if you'd like to continue working on it.
+          close-pr-message: |
+            Closing due to inactivity. Reopen anytime to continue.
+          exempt-pr-labels: 'wip'
+          exempt-draft-pr: true
