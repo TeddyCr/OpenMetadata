@@ -5,7 +5,7 @@ on:
     - cron: '0 9 * * 1'  # Runs 9AM UTC on mondays
   workflow_dispatch:
 
-permissions:                                                                                                                              
+permissions:
   pull-requests: write
   issues: write
 
