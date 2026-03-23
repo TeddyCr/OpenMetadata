@@ -139,6 +139,12 @@ public class DatabaseSchemaResource
               schema = @Schema(type = "string", example = "customerDatabase"))
           @QueryParam("database")
           String databaseParam,
+      @Parameter(
+              description =
+                  "Filter schemas by fqn regex pattern. For better performance use in combination with database query filter",
+              schema = @Schema(type = "string", example = "snowflakeWestCoast.financeDB.*"))
+          @QueryParam("databaseSchemaRegex")
+          String databaseSchemaParamRegex,
       @Parameter(description = "Limit the number schemas returned. (1 to 1000000, default = 10)")
           @DefaultValue("10")
           @QueryParam("limit")
@@ -162,6 +168,9 @@ public class DatabaseSchemaResource
           @DefaultValue("non-deleted")
           Include include) {
     ListFilter filter = new ListFilter(include).addQueryParam("database", databaseParam);
+    if (databaseSchemaParamRegex != null) {
+      filter.addQueryParam("databaseSchemaRegex", databaseSchemaParamRegex);
+    }
     return listInternal(uriInfo, securityContext, fieldsParam, filter, limitParam, before, after);
   }
 

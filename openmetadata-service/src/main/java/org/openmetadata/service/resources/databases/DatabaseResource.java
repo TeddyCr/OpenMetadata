@@ -135,6 +135,12 @@ public class DatabaseResource extends EntityResource<Database, DatabaseRepositor
               schema = @Schema(type = "string", example = "snowflakeWestCoast"))
           @QueryParam("service")
           String serviceParam,
+      @Parameter(
+              description =
+                  "Filter database by fqn regex pattern. For better performance use in combination with service query filter",
+              schema = @Schema(type = "string", example = "snowflakeWestCoast.financeDB.*"))
+          @QueryParam("databaseRegex")
+          String databaseParamRegex,
       @Parameter(description = "Limit the number tables returned. (1 to 1000000, default = 10)")
           @DefaultValue("10")
           @QueryParam("limit")
@@ -160,6 +166,9 @@ public class DatabaseResource extends EntityResource<Database, DatabaseRepositor
     ListFilter filter = new ListFilter(include);
     if (serviceParam != null) {
       filter.addQueryParam("service", serviceParam);
+    }
+    if (databaseParamRegex != null) {
+      filter.addQueryParam("databaseRegex", databaseParamRegex);
     }
     return super.listInternal(
         uriInfo, securityContext, fieldsParam, filter, limitParam, before, after);

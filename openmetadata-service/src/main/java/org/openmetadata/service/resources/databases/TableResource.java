@@ -200,6 +200,18 @@ public class TableResource extends EntityResource<Table, TableRepository> {
           String databaseSchemaParam,
       @Parameter(
               description =
+                  "Filter tables by database schema fqn regex pattern. For better performance use in combination with database query filter",
+              schema = @Schema(type = "string", example = "snowflakeWestCoast.financeDB.*"))
+          @QueryParam("databaseSchemaRegex")
+          String databaseSchemaParamRegex,
+      @Parameter(
+              description =
+                  "Filter tables by table fqn regex pattern. For better performance use in combination with  and or databaseSchema query filter",
+              schema = @Schema(type = "string", example = "snowflakeWestCoast.financeDB.*"))
+          @QueryParam("tableRegex")
+          String tableParamRegex,
+      @Parameter(
+              description =
                   "Include tables with an empty test suite (i.e. no test cases have been created for this table). Default to true",
               schema = @Schema(type = "boolean", example = "true"))
           @QueryParam("includeEmptyTestSuite")
@@ -233,6 +245,12 @@ public class TableResource extends EntityResource<Table, TableRepository> {
     }
     if (databaseSchemaParam != null) {
       filter.addQueryParam("databaseSchema", databaseSchemaParam);
+    }
+    if (databaseSchemaParamRegex != null) {
+      filter.addQueryParam("databaseSchemaRegex", databaseSchemaParamRegex);
+    }
+    if (tableParamRegex != null) {
+      filter.addQueryParam("tableParamRegex", tableParamRegex);
     }
     // Only add includeEmptyTestSuite when it's explicitly false (default is true)
     if (!includeEmptyTestSuite) {

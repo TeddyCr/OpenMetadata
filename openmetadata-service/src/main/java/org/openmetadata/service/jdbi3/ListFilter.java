@@ -37,6 +37,7 @@ public class ListFilter extends Filter<ListFilter> {
     conditions.add(getIncludeCondition(tableName));
     conditions.add(getDatabaseCondition(tableName));
     conditions.add(getDatabaseSchemaCondition(tableName));
+    conditions.add(getTableNameRegexCondition(tableName));
     conditions.add(getServiceCondition(tableName));
     conditions.add(getServiceTypeCondition(tableName));
     conditions.add(getPipelineTypeCondition(tableName));
@@ -247,23 +248,50 @@ public class ListFilter extends Filter<ListFilter> {
 
   public String getDatabaseCondition(String tableName) {
     String database = queryParams.get("database");
-    return database == null ? "" : getFqnPrefixCondition(tableName, database, "database");
+    String databaseRegex = queryParams.get("databaseRegex");
+    String hashCondition = "True";
+    String regexCondition = "True";
+    if (!nullOrEmpty(database)) {
+      hashCondition = getFqnPrefixCondition(tableName, database, "database");
+    }
+    if (!nullOrEmpty(databaseRegex)) {
+      regexCondition = getFqnRegexCondition(tableName, databaseRegex, "database");
+    }
+    return String.format("(%s AND %s)", hashCondition, regexCondition);
   }
 
   public String getDatabaseSchemaCondition(String tableName) {
     String databaseSchema = queryParams.get("databaseSchema");
-    if (databaseSchema == null) {
+    String databaseSchemaRegex = queryParams.get("databaseSchemaRegex");
+    if (nullOrEmpty(databaseSchema) && nullOrEmpty(databaseSchemaRegex)) {
       return "";
     }
-
-    if (!nullOrEmpty(tableName)
-        && (tableName.equals("table_entity") || tableName.equals("stored_procedure_entity"))) {
-      String databaseSchemaHash = FullyQualifiedName.buildHash(databaseSchema);
-      queryParams.put("databaseSchemaHashExact", databaseSchemaHash);
-      return String.format("%s.databaseSchemaHash = :databaseSchemaHashExact", tableName);
+    String hashCondition = "True";
+    String regexCondition = "True";
+    if (!nullOrEmpty(databaseSchema)) {
+      if (!nullOrEmpty(tableName)
+          && (tableName.equals("table_entity") || tableName.equals("stored_procedure_entity"))) {
+        String databaseSchemaHash = FullyQualifiedName.buildHash(databaseSchema);
+        queryParams.put("databaseSchemaHashExact", databaseSchemaHash);
+        // Exact hash match — regex is not applied for these entity tables
+        return String.format("%s.databaseSchemaHash = :databaseSchemaHashExact", tableName);
+      }
+      hashCondition = getFqnPrefixCondition(tableName, databaseSchema, "databaseSchema");
     }
 
-    return getFqnPrefixCondition(tableName, databaseSchema, "databaseSchema");
+    if (!nullOrEmpty(databaseSchemaRegex)) {
+      regexCondition = getFqnRegexCondition(tableName, databaseSchemaRegex, "databaseSchema");
+    }
+
+    return String.format("(%s AND %s)", hashCondition, regexCondition);
+  }
+
+  public String getTableNameRegexCondition(String tableName) {
+    String tableParamRegex = queryParams.get("tableParamRegex");
+    if (nullOrEmpty(tableParamRegex)) {
+      return "";
+    }
+    return getFqnRegexCondition(tableName, tableParamRegex, "tableParam");
   }
 
   public String getServiceCondition(String tableName) {
@@ -603,6 +631,24 @@ public class ListFilter extends Filter<ListFilter> {
     return tableName == null
         ? String.format("fqnHash LIKE :%s", paramName + "Hash")
         : String.format("%s.fqnHash LIKE :%s", tableName, paramName + "Hash");
+  }
+
+  private String getFqnRegexCondition(String tableName, String fqnRegex, String paramName) {
+    queryParams.put(paramName + "Regex", fqnRegex);
+    if (Boolean.TRUE.equals(DatasourceConfig.getInstance().isMySQL())) {
+      String fqnExpr =
+          tableName == null
+              ? "JSON_UNQUOTE(JSON_EXTRACT(json, '$.fullyQualifiedName'))"
+              : String.format(
+                  "JSON_UNQUOTE(JSON_EXTRACT(%s.json, '$.fullyQualifiedName'))", tableName);
+      return String.format("%s REGEXP :%s", fqnExpr, paramName + "Regex");
+    } else {
+      String fqnExpr =
+          tableName == null
+              ? "json->>'fullyQualifiedName'"
+              : String.format("%s.json->>'fullyQualifiedName'", tableName);
+      return String.format("%s ~ :%s", fqnExpr, paramName + "Regex");
+    }
   }
 
   private String getWebhookTypePrefixCondition(String tableName, String typePrefix) {
