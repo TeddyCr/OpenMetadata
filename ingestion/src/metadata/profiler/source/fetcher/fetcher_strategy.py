@@ -38,9 +38,7 @@ from metadata.profiler.source.fetcher.profiler_source_factory import (
 )
 from metadata.profiler.source.model import ProfilerSourceAndEntity
 from metadata.utils.db_utils import Table
-from metadata.utils.filters import (
-    filter_by_classification,
-)
+from metadata.utils.filters import filter_by_classification
 
 FIELDS = ["tableProfilerConfig", "columns", "customMetrics", "tags"]
 
@@ -151,9 +149,7 @@ class DatabaseFetcherStrategy(FetcherStrategy):
 
     def _build_database_params(self) -> Dict[str, str]:
         params: Dict[str, str] = {"service": self.config.source.serviceName}  # type: ignore
-        db_filter = _build_regex_from_filter(
-            self.source_config.databaseFilterPattern
-        )
+        db_filter = _build_regex_from_filter(self.source_config.databaseFilterPattern)
         if db_filter:
             params["databaseRegex"] = db_filter.regex
             params["regexMode"] = db_filter.mode
@@ -206,16 +202,12 @@ class DatabaseFetcherStrategy(FetcherStrategy):
         }
 
         regex_mode: Optional[str] = None
-        schema_filter = _build_regex_from_filter(
-            self.source_config.schemaFilterPattern
-        )
+        schema_filter = _build_regex_from_filter(self.source_config.schemaFilterPattern)
         if schema_filter:
             params["databaseSchemaRegex"] = schema_filter.regex
             regex_mode = schema_filter.mode
 
-        table_filter = _build_regex_from_filter(
-            self.source_config.tableFilterPattern
-        )
+        table_filter = _build_regex_from_filter(self.source_config.tableFilterPattern)
         if table_filter:
             params["tableRegex"] = table_filter.regex
             regex_mode = table_filter.mode

@@ -35,6 +35,7 @@ from metadata.generated.schema.metadataIngestion.workflow import (
     WorkflowConfig,
 )
 from metadata.generated.schema.type.entityReference import EntityReference
+from metadata.generated.schema.type.filterPattern import FilterPattern
 from metadata.generated.schema.type.tagLabel import TagLabel
 from metadata.ingestion.api.status import Status
 from metadata.profiler.api.models import ProfilerProcessorConfig
@@ -43,7 +44,6 @@ from metadata.profiler.interface.sqlalchemy.profiler_interface import (
 )
 from metadata.profiler.orm.converter import base
 from metadata.profiler.source.database.base.profiler_source import ProfilerSource
-from metadata.generated.schema.type.filterPattern import FilterPattern
 from metadata.profiler.source.fetcher.fetcher_strategy import (
     DatabaseFetcherStrategy,
     _build_regex_from_filter,
@@ -229,7 +229,9 @@ def test_build_table_params():
         id=uuid.uuid4(),
         name="db",
         fullyQualifiedName="my_service.db",
-        service=EntityReference(id=uuid.uuid4(), name="my_service", type="databaseService"),
+        service=EntityReference(
+            id=uuid.uuid4(), name="my_service", type="databaseService"
+        ),
     )
 
     # No filter pattern -> only service and database params
@@ -369,9 +371,7 @@ def test_filter_classifications():
 
     # Both includes and excludes
     both_config = deepcopy(config)
-    both_config["source"]["sourceConfig"]["config"][
-        "classificationFilterPattern"
-    ] = {
+    both_config["source"]["sourceConfig"]["config"]["classificationFilterPattern"] = {
         "excludes": ["tag1"],
         "includes": ["tag2"],
     }
