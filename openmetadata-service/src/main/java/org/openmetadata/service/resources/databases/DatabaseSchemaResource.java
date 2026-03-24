@@ -142,8 +142,8 @@ public class DatabaseSchemaResource
           String databaseParam,
       @Parameter(
               description =
-                  "Filter schemas by regex pattern. For better performance use in combination with database query filter",
-              schema = @Schema(type = "string", example = "snowflakeWestCoast.financeDB.*"))
+                  "Filter schemas by regex pattern applied to the schema `name` by default. To apply the regex to the fullyQualifiedName instead, set `regexFilterByFqn=true`. For better performance use in combination with the `database` query filter.",
+              schema = @Schema(type = "string", example = "finance_.*"))
           @QueryParam("databaseSchemaRegex")
           String databaseSchemaParamRegex,
       @Parameter(description = "Limit the number schemas returned. (1 to 1000000, default = 10)")
