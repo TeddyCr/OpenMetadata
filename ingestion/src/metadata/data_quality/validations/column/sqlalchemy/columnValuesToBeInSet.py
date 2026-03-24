@@ -43,7 +43,10 @@ logger = test_suite_logger()
 
 
 class ColumnValuesToBeInSetValidator(
-    FailedSampleValidatorMixin, BaseColumnValuesToBeInSetValidator, SQAValidatorMixin, SQARowSamplerMixin
+    FailedSampleValidatorMixin,
+    BaseColumnValuesToBeInSetValidator,
+    SQAValidatorMixin,
+    SQARowSamplerMixin,
 ):
     """Validator for column value to be in set test case"""
 

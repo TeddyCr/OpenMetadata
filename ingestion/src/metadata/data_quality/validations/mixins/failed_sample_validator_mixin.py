@@ -46,9 +46,7 @@ class FailedSampleValidatorMixin(ABC):
     def fetch_failed_rows_sample(self) -> TableData:
         raise NotImplementedError
 
-    def result_with_failed_samples(
-        self, test_case, result: TestCaseResult
-    ) -> None:
+    def result_with_failed_samples(self, test_case, result: TestCaseResult) -> None:
         """Fetch failed row samples and attach them to the result.
 
         Called by BaseTestValidator.run_validation() at the end of validation.

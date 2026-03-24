@@ -9,8 +9,6 @@ Tests the orchestration logic of result_with_failed_samples():
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from metadata.data_quality.validations.mixins.failed_row_sampler_mixin import (
     FAILED_ROW_SAMPLE_SIZE,
     PandasFailedRowSamplerMixin,
@@ -75,7 +73,9 @@ class TestFailedSampleValidatorMixin:
 
         validator.result_with_failed_samples(test_case, result)
 
-        assert not hasattr(result, "failedRowsSample") or result.failedRowsSample is None
+        assert (
+            not hasattr(result, "failedRowsSample") or result.failedRowsSample is None
+        )
 
     def test_no_samples_when_flag_is_false(self):
         sample = TableData(columns=["a"], rows=[["1"]])
@@ -85,7 +85,9 @@ class TestFailedSampleValidatorMixin:
 
         validator.result_with_failed_samples(test_case, result)
 
-        assert not hasattr(result, "failedRowsSample") or result.failedRowsSample is None
+        assert (
+            not hasattr(result, "failedRowsSample") or result.failedRowsSample is None
+        )
 
     def test_no_samples_when_flag_is_none(self):
         validator = ConcreteValidator(sample_data=TableData(columns=[], rows=[]))
@@ -95,7 +97,9 @@ class TestFailedSampleValidatorMixin:
 
         validator.result_with_failed_samples(test_case, result)
 
-        assert not hasattr(result, "failedRowsSample") or result.failedRowsSample is None
+        assert (
+            not hasattr(result, "failedRowsSample") or result.failedRowsSample is None
+        )
 
     def test_fetch_error_does_not_propagate(self):
         validator = ConcreteValidator(raise_on_fetch=True)
@@ -104,7 +108,9 @@ class TestFailedSampleValidatorMixin:
 
         validator.result_with_failed_samples(test_case, result)
 
-        assert not hasattr(result, "failedRowsSample") or result.failedRowsSample is None
+        assert (
+            not hasattr(result, "failedRowsSample") or result.failedRowsSample is None
+        )
 
     def test_inspection_query_none_by_default(self):
         sample = TableData(columns=["a"], rows=[["1"]])
@@ -130,6 +136,7 @@ class TestPandasFailedRowSamplerMixin:
             def runner(self_inner):
                 def gen():
                     yield large_df
+
                 return gen()
 
             def filter(self_inner):
@@ -150,6 +157,7 @@ class TestPandasFailedRowSamplerMixin:
             def runner(self_inner):
                 def gen():
                     yield df
+
                 return gen()
 
             def filter(self_inner):
@@ -172,6 +180,7 @@ class TestPandasFailedRowSamplerMixin:
                 def gen():
                     yield chunk1
                     yield chunk2
+
                 return gen()
 
             def filter(self_inner):

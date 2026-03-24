@@ -9,11 +9,8 @@ from typing import List, Optional
 
 import pandas as pd
 import pytest
-from _openmetadata_testutils.helpers.assumption import (
-    Assumption,
-    assume,
-)
 
+from _openmetadata_testutils.helpers.assumption import Assumption, assume
 from metadata.data_quality.api.models import (
     TestCaseDefinition,
     TestSuiteProcessorConfig,
@@ -22,7 +19,6 @@ from metadata.generated.schema.entity.data.table import Table
 from metadata.generated.schema.entity.services.databaseService import DatabaseService
 from metadata.generated.schema.metadataIngestion.testSuitePipeline import (
     TestSuiteConfigType,
-    TestSuitePipeline,
 )
 from metadata.generated.schema.tests.basic import TestCaseStatus
 from metadata.generated.schema.tests.testCase import TestCase, TestCaseParameterValue
@@ -124,9 +120,7 @@ FAILING_TEST_PARAMS = [
                 columnName="first_name",
                 computePassedFailedRowCount=True,
                 parameterValues=[
-                    TestCaseParameterValue(
-                        name="allowedValues", value=str(["Jonnny"])
-                    ),
+                    TestCaseParameterValue(name="allowedValues", value=str(["Jonnny"])),
                 ],
             ),
             [~assume.column_values_in("first_name", ["Jonnny"])],
@@ -138,9 +132,7 @@ FAILING_TEST_PARAMS = [
                 columnName="first_name",
                 computePassedFailedRowCount=True,
                 parameterValues=[
-                    TestCaseParameterValue(
-                        name="forbiddenValues", value=str(["Tim"])
-                    ),
+                    TestCaseParameterValue(name="forbiddenValues", value=str(["Tim"])),
                 ],
             ),
             [
