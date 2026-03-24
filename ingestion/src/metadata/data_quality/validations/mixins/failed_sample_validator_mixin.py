@@ -13,19 +13,19 @@
 Mixin that orchestrates failed row sampling for test case validators.
 
 When a test case has computePassedFailedRowCount=True and the result is Failed,
-this mixin fetches a sample of failed rows and attaches it (along with the
-inspection query for SQL sources) to the TestCaseResult via the
-TestCaseResultResponse wrapper.
+this mixin fetches a sample of failed rows and the inspection query (for SQL
+sources), attaching them directly to the TestCaseResult instance.
+
+BaseTestValidator.run_validation() calls self.result_with_failed_samples()
+which is a no-op by default. This mixin overrides it to do the actual work.
 """
 
 import traceback
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from metadata.data_quality.api.models import TestCaseResultResponse
 from metadata.generated.schema.entity.data.table import TableData
 from metadata.generated.schema.tests.basic import TestCaseResult, TestCaseStatus
-from metadata.generated.schema.tests.testCase import TestCase
 from metadata.utils.logger import test_suite_logger
 
 logger = test_suite_logger()
@@ -46,47 +46,33 @@ class FailedSampleValidatorMixin(ABC):
     def fetch_failed_rows_sample(self) -> TableData:
         raise NotImplementedError
 
-    def get_failed_sample_data(
-        self, test_case: TestCase, result: TestCaseResult
-    ) -> TestCaseResultResponse:
-        """Build a TestCaseResultResponse, attaching failed row sample if applicable.
+    def result_with_failed_samples(
+        self, test_case, result: TestCaseResult
+    ) -> None:
+        """Fetch failed row samples and attach them to the result.
 
+        Called by BaseTestValidator.run_validation() at the end of validation.
         Only fetches samples when:
           - test_case.computePassedFailedRowCount is True
           - result.testCaseStatus is Failed
 
-        Args:
-            test_case: The test case being validated
-            result: The test case result from run_validation
-
-        Returns:
-            TestCaseResultResponse with optional failedRowsSample and inspectionQuery
+        Attaches failedRowsSample and inspectionQuery directly on the
+        TestCaseResult instance for the runner/sink to pick up.
         """
-        response = TestCaseResultResponse(
-            testCaseResult=result,
-            testCase=test_case,
-        )
-
         if not (
             getattr(test_case, "computePassedFailedRowCount", False)
             and result.testCaseStatus == TestCaseStatus.Failed
         ):
-            return response
+            return
 
         try:
-            failed_rows = self.fetch_failed_rows_sample()
-            if failed_rows is not None:
-                response.failedRowsSample = failed_rows
+            result.failedRowsSample = self.fetch_failed_rows_sample()
         except Exception:
             logger.debug(traceback.format_exc())
             logger.error("Failed to fetch failed rows sample")
 
         try:
-            inspection_query = self.get_inspection_query()
-            if inspection_query is not None:
-                response.inspectionQuery = inspection_query
+            result.inspectionQuery = self.get_inspection_query()
         except Exception:
             logger.debug(traceback.format_exc())
             logger.error("Failed to get inspection query")
-
-        return response
