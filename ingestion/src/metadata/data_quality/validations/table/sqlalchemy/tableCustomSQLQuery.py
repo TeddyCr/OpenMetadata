@@ -13,7 +13,7 @@
 Validator for table custom SQL Query test case
 """
 
-from typing import Optional, Tuple, cast
+from typing import Any, List, Optional, Tuple, cast
 
 import sqlparse
 from sqlalchemy import text
@@ -21,6 +21,12 @@ from sqlalchemy.sql import func, select
 from sqlparse.sql import Statement, Token, Where
 from sqlparse.tokens import Keyword
 
+from metadata.data_quality.validations.mixins.failed_row_sampler_mixin import (
+    FAILED_ROW_SAMPLE_SIZE,
+)
+from metadata.data_quality.validations.mixins.failed_sample_validator_mixin import (
+    FailedSampleValidatorMixin,
+)
 from metadata.data_quality.validations.mixins.sqa_validator_mixin import (
     SQAValidatorMixin,
 )
@@ -31,6 +37,7 @@ from metadata.data_quality.validations.table.base.tableCustomSQLQuery import (
     BaseTableCustomSQLQueryValidator,
     Strategy,
 )
+from metadata.generated.schema.entity.data.table import TableData
 from metadata.generated.schema.tests.basic import TestCaseResult
 from metadata.profiler.metrics.registry import Metrics
 from metadata.profiler.orm.functions.table_metric_computer import TableMetricComputer
@@ -41,7 +48,9 @@ from metadata.utils.logger import ingestion_logger
 logger = ingestion_logger()
 
 
-class TableCustomSQLQueryValidator(BaseTableCustomSQLQueryValidator, SQAValidatorMixin):
+class TableCustomSQLQueryValidator(
+    FailedSampleValidatorMixin, BaseTableCustomSQLQueryValidator, SQAValidatorMixin
+):
     """Validator for table custom SQL Query test case"""
 
     def _replace_where_clause(
@@ -368,3 +377,34 @@ class TableCustomSQLQueryValidator(BaseTableCustomSQLQueryValidator, SQAValidato
         if row:
             return row._asdict().get(Metrics.rowCount.name)
         return None
+
+    def _get_strategy(self):
+        return self.get_test_case_param_value(
+            self.test_case.parameterValues,  # type: ignore
+            "strategy",
+            Strategy,
+        )
+
+    def fetch_failed_rows_sample(self):
+        cols, rows = self._get_custom_sql_failed_rows()
+        return TableData(columns=cols, rows=rows)
+
+    def _get_custom_sql_failed_rows(self) -> Tuple[List[str], List[List[Any]]]:
+        sql_expression = self.get_test_case_param_value(
+            self.test_case.parameterValues,  # type: ignore
+            "sqlExpression",
+            str,
+        )
+        rows = self._run_results(sql_expression, self._get_strategy())[
+            :FAILED_ROW_SAMPLE_SIZE
+        ]
+        if len(rows) == 0:
+            return [], []
+        return [str(col) for col in rows[0]._fields], [list(row) for row in rows]
+
+    def get_inspection_query(self):
+        return self.get_test_case_param_value(
+            self.test_case.parameterValues,  # type: ignore
+            "sqlExpression",
+            str,
+        )

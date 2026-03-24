@@ -186,7 +186,18 @@ class BaseTestValidator(ABC):
                 )
                 logger.debug(traceback.format_exc())
 
+        self.result_with_failed_samples(self.test_case, test_result)
+
         return test_result
+
+    def result_with_failed_samples(
+        self, test_case: TestCase, result: TestCaseResult
+    ) -> None:
+        """Hook for failed row sampling. No-op by default.
+
+        Overridden by FailedSampleValidatorMixin to fetch and stash
+        failed row samples on the validator instance.
+        """
 
     @abstractmethod
     def _run_validation(self) -> TestCaseResult:
