@@ -39,7 +39,16 @@ class DataTestsRunner:
         )
 
         if test_result:
-            return TestCaseResultResponse(
+            response = TestCaseResultResponse(
                 testCaseResult=test_result, testCase=test_case
             )
+            failed_rows = getattr(test_result, "failedRowsSample", None)
+            inspection_query = getattr(test_result, "inspectionQuery", None)
+            validate_columns = getattr(test_result, "validateColumns", True)
+            if failed_rows is not None:
+                response.failedRowsSample = failed_rows
+            if inspection_query is not None:
+                response.inspectionQuery = inspection_query
+            response.validateColumns = validate_columns
+            return response
         return None

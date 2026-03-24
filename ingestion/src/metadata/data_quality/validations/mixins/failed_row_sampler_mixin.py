@@ -1,0 +1,64 @@
+#  Copyright 2025 Collate
+#  Licensed under the Collate Community License, Version 1.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#  https://github.com/open-metadata/OpenMetadata/blob/main/ingestion/LICENSE
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+"""
+Mixins for fetching failed row samples from test case validations.
+
+SQARowSamplerMixin: SQLAlchemy-based row sampling (builds query, captures compiled SQL)
+PandasFailedRowSamplerMixin: DataFrame-based row sampling (filters chunks via df.query())
+"""
+
+from typing import Any, List, Tuple, cast
+
+from sqlalchemy import inspect
+
+from metadata.profiler.processor.runner import QueryRunner
+
+FAILED_ROW_SAMPLE_SIZE = 50
+
+
+class PandasFailedRowSamplerMixin:
+    """Mixin to fetch failed row samples from Pandas DataFrames"""
+
+    def _get_failed_rows_sample(self) -> Tuple[List[str], List[List[Any]]]:
+        cols = next(self.runner()).columns.tolist()
+        rows = []
+        for chunk in self.runner():
+            prepared_chunk = chunk[cols]
+            _filter = self.filter()
+            chunk_rows = prepared_chunk.query(_filter).values.tolist()
+            rows.extend(chunk_rows[:FAILED_ROW_SAMPLE_SIZE])
+            if len(rows) >= FAILED_ROW_SAMPLE_SIZE:
+                break
+
+        return cols, rows
+
+
+class SQARowSamplerMixin:
+    """Mixin to fetch failed row samples from SQLAlchemy queries"""
+
+    def _get_failed_rows_sample(self) -> Tuple[List[str], List[List[Any]]]:
+        # pylint: disable=protected-access
+        self.runner = cast(QueryRunner, self.runner)
+        cols = list(inspect(self.runner.dataset).c)
+        _filter = self.filter()
+        if isinstance(_filter, dict):
+            query = self.runner._select_from_sample(*cols, query_filter_=_filter)
+        else:
+            query = self.runner._select_from_sample(*cols)
+            query = query.filter(_filter)
+
+        self._inspection_query = str(
+            query.statement.compile(compile_kwargs={"literal_binds": True})
+        )
+
+        rows = query.limit(FAILED_ROW_SAMPLE_SIZE).all()
+        return [col.name for col in cols], [list(row) for row in rows]
