@@ -49,6 +49,7 @@ from metadata.profiler.source.fetcher.fetcher_strategy import (
     _build_regex_from_filter,
 )
 from metadata.profiler.source.metadata import OpenMetadataSource
+from metadata.utils.filters import InvalidPatternException
 from metadata.workflow.profiler import ProfilerWorkflow
 
 TABLE = Table(
@@ -172,6 +173,14 @@ def test_build_regex_from_filter():
     assert result is not None
     assert result.regex == "finance"
     assert result.mode == "include"
+
+    # Invalid regex in includes raises InvalidPatternException
+    with raises(InvalidPatternException, match="Invalid regex"):
+        _build_regex_from_filter(FilterPattern(includes=["[invalid"]))
+
+    # Invalid regex in excludes raises InvalidPatternException
+    with raises(InvalidPatternException, match="Invalid regex"):
+        _build_regex_from_filter(FilterPattern(excludes=["(unclosed"]))
 
 
 def test_build_database_params():

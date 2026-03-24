@@ -42,6 +42,7 @@ from metadata.utils.filters import (
     filter_by_classification,
     filter_by_schema,
     filter_by_table,
+    validate_regex,
 )
 
 FIELDS = ["tableProfilerConfig", "columns", "customMetrics", "tags"]
@@ -64,9 +65,12 @@ def _build_regex_from_filter(
     """Build a RegexFilter from a FilterPattern for server-side filtering.
 
     When both includes and excludes are set, includes take precedence.
+    Validates that all regex patterns compile before sending them to the server.
     """
     if not filter_pattern:
         return None
+    validate_regex(filter_pattern.includes)
+    validate_regex(filter_pattern.excludes)
     if filter_pattern.includes:
         return RegexFilter(
             regex=_combine_patterns(filter_pattern.includes), mode="include"
