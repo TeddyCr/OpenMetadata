@@ -207,7 +207,7 @@ public class TableResource extends EntityResource<Table, TableRepository> {
           String databaseSchemaParamRegex,
       @Parameter(
               description =
-                  "Filter tables by table regex pattern. For better performance use in combination with  and or databaseSchema query filter",
+                  "Filter tables by table regex pattern. For better performance use in combination with database and/or databaseSchema query filter",
               schema = @Schema(type = "string", example = "snowflakeWestCoast.financeDB.*"))
           @QueryParam("tableRegex")
           String tableParamRegex,

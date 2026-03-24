@@ -488,6 +488,50 @@ class TestGetTableEntities:
         assert "regexMode" not in call_params
         assert len(result) == len(all_tables)
 
+    def test_conflicting_modes_include_schema_exclude_table(self):
+        """When schemaFilterPattern uses includes and tableFilterPattern
+        uses excludes, only the schema include is pushed to the backend.
+        The table exclude is applied client-side."""
+        fetcher = _make_fetcher({
+            "schemaFilterPattern": {"includes": ["finance"]},
+            "tableFilterPattern": {"excludes": ["customers"]},
+            "includeViews": True,
+        })
+        fetcher.metadata.list_all_entities.return_value = iter(
+            [ORDERS_TABLE, CUSTOMERS_TABLE, REVENUE_VIEW]
+        )
+
+        result = list(fetcher._get_table_entities(PROD_DB))
+
+        call_params = fetcher.metadata.list_all_entities.call_args[1]["params"]
+        assert call_params["databaseSchemaRegex"] == "finance"
+        assert call_params["regexMode"] == "include"
+        assert "tableRegex" not in call_params
+        assert CUSTOMERS_TABLE not in result
+        assert result == [ORDERS_TABLE, REVENUE_VIEW]
+
+    def test_conflicting_modes_exclude_schema_include_table(self):
+        """When schemaFilterPattern uses excludes and tableFilterPattern
+        uses includes, only the table include is pushed to the backend.
+        The schema exclude is applied client-side."""
+        fetcher = _make_fetcher({
+            "schemaFilterPattern": {"excludes": ["hr"]},
+            "tableFilterPattern": {"includes": ["orders"]},
+            "includeViews": True,
+        })
+        fetcher.metadata.list_all_entities.return_value = iter(
+            [ORDERS_TABLE, EMPLOYEES_TABLE]
+        )
+
+        result = list(fetcher._get_table_entities(PROD_DB))
+
+        call_params = fetcher.metadata.list_all_entities.call_args[1]["params"]
+        assert call_params["tableRegex"] == "orders"
+        assert call_params["regexMode"] == "include"
+        assert "databaseSchemaRegex" not in call_params
+        assert EMPLOYEES_TABLE not in result
+        assert result == [ORDERS_TABLE]
+
 
 class TestFetch:
     """Validate end-to-end fetch() pipeline across multiple databases"""

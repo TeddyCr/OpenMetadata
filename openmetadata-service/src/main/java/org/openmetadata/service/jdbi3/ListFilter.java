@@ -280,8 +280,8 @@ public class ListFilter extends Filter<ListFilter> {
         // Exact hash match — regex is not applied for these entity tables
         return String.format("%s.databaseSchemaHash = :databaseSchemaHashExact", tableName);
       }
-      hashCondition = getFqnPrefixCondition(tableName, databaseSchema, "databaseSchema");
-    }
+        hashCondition = getFqnPrefixCondition(tableName, databaseSchema, "databaseSchema");
+      }
 
     if (!nullOrEmpty(databaseSchemaRegex)) {
       regexCondition = getFqnRegexCondition(tableName, databaseSchemaRegex, "databaseSchema");
@@ -643,7 +643,12 @@ public class ListFilter extends Filter<ListFilter> {
       fieldPath = "name";
     }
     if (Boolean.parseBoolean(queryParams.get("regexFilterByFqn"))) {
-      fieldPath = fieldPath.replace("name", "fullyQualifiedName");
+      int lastDot = fieldPath.lastIndexOf(".name");
+      if (lastDot == -1) {
+        fieldPath = "fullyQualifiedName";
+      } else {
+        fieldPath = fieldPath.substring(0, lastDot) + ".fullyQualifiedName";
+      }
     }
     boolean exclude = RegexMode.EXCLUDE.value().equalsIgnoreCase(queryParams.get("regexMode"));
     queryParams.put(paramName + "Regex", regex);

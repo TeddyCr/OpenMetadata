@@ -38,7 +38,11 @@ from metadata.profiler.source.fetcher.profiler_source_factory import (
 )
 from metadata.profiler.source.model import ProfilerSourceAndEntity
 from metadata.utils.db_utils import Table
-from metadata.utils.filters import filter_by_classification
+from metadata.utils.filters import (
+    filter_by_classification,
+    filter_by_schema,
+    filter_by_table,
+)
 
 FIELDS = ["tableProfilerConfig", "columns", "customMetrics", "tags"]
 
@@ -201,14 +205,21 @@ class DatabaseFetcherStrategy(FetcherStrategy):
             "database": database.fullyQualifiedName.root,  # type: ignore
         }
 
-        regex_mode: Optional[str] = None
         schema_filter = _build_regex_from_filter(self.source_config.schemaFilterPattern)
-        if schema_filter:
+        table_filter = _build_regex_from_filter(self.source_config.tableFilterPattern)
+
+        conflicting_modes = (
+            schema_filter is not None
+            and table_filter is not None
+            and schema_filter.mode != table_filter.mode
+        )
+
+        regex_mode: Optional[str] = None
+        if schema_filter and (not conflicting_modes or schema_filter.mode == "include"):
             params["databaseSchemaRegex"] = schema_filter.regex
             regex_mode = schema_filter.mode
 
-        table_filter = _build_regex_from_filter(self.source_config.tableFilterPattern)
-        if table_filter:
+        if table_filter and (not conflicting_modes or table_filter.mode == "include"):
             params["tableRegex"] = table_filter.regex
             regex_mode = table_filter.mode
 
@@ -219,6 +230,53 @@ class DatabaseFetcherStrategy(FetcherStrategy):
 
         return params
 
+    def _has_conflicting_filter_modes(self) -> bool:
+        schema_filter = _build_regex_from_filter(self.source_config.schemaFilterPattern)
+        table_filter = _build_regex_from_filter(self.source_config.tableFilterPattern)
+        return (
+            schema_filter is not None
+            and table_filter is not None
+            and schema_filter.mode != table_filter.mode
+        )
+
+    def _filter_deferred_excludes(self, table: Table) -> bool:
+        """Apply exclude filters that were deferred to client-side
+        because schema and table filters use conflicting modes."""
+        schema_filter = _build_regex_from_filter(self.source_config.schemaFilterPattern)
+        table_filter = _build_regex_from_filter(self.source_config.tableFilterPattern)
+
+        if schema_filter and schema_filter.mode == "exclude" and table.databaseSchema:
+            exclude_only = FilterPattern(
+                excludes=self.source_config.schemaFilterPattern.excludes
+            )
+            schema_name = (
+                table.databaseSchema.fullyQualifiedName
+                if self.source_config.useFqnForFiltering
+                else table.databaseSchema.name
+            )
+            if schema_name and filter_by_schema(exclude_only, schema_name):
+                self.status.filter(
+                    schema_name,
+                    f"Schema pattern not allowed for schema {schema_name}",
+                )
+                return True
+
+        if table_filter and table_filter.mode == "exclude":
+            exclude_only = FilterPattern(
+                excludes=self.source_config.tableFilterPattern.excludes
+            )
+            table_name = table.name.root
+            if table.fullyQualifiedName and self.source_config.useFqnForFiltering:
+                table_name = table.fullyQualifiedName.root
+            if filter_by_table(exclude_only, table_name):
+                self.status.filter(
+                    table_name,
+                    f"Table pattern not allowed for table {table_name}",
+                )
+                return True
+
+        return False
+
     def _get_table_entities(self, database: Database) -> Iterable[Table]:
         """Given a database, get all table entities"""
         params = self._build_table_params(database)
@@ -228,7 +286,11 @@ class DatabaseFetcherStrategy(FetcherStrategy):
             params=params,
         )
 
+        has_deferred = self._has_conflicting_filter_modes()
+
         for table in tables:
+            if has_deferred and self._filter_deferred_excludes(table):
+                continue
             if (
                 self.source_config.classificationFilterPattern
                 and self.filter_classifications(table)

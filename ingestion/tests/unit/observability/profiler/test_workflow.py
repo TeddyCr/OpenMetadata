@@ -287,6 +287,33 @@ def test_build_table_params():
     assert params["regexMode"] == "exclude"
     assert params["regexFilterByFqn"] == "true"
 
+    conflict_config = deepcopy(config)
+    conflict_config["source"]["sourceConfig"]["config"]["schemaFilterPattern"] = {
+        "includes": ["finance"]
+    }
+    conflict_config["source"]["sourceConfig"]["config"]["tableFilterPattern"] = {
+        "excludes": ["temp.*"]
+    }
+    fetcher = DatabaseFetcherStrategy(OpenMetadataWorkflowConfig(**conflict_config), None, None, Status())  # type: ignore
+    params = fetcher._build_table_params(database)
+    assert params["databaseSchemaRegex"] == "finance"
+    assert params["regexMode"] == "include"
+    assert "tableRegex" not in params
+
+    # Conflicting modes: schema=exclude, table=include -> only include goes to backend
+    conflict_config2 = deepcopy(config)
+    conflict_config2["source"]["sourceConfig"]["config"]["schemaFilterPattern"] = {
+        "excludes": ["hr"]
+    }
+    conflict_config2["source"]["sourceConfig"]["config"]["tableFilterPattern"] = {
+        "includes": ["orders.*"]
+    }
+    fetcher = DatabaseFetcherStrategy(OpenMetadataWorkflowConfig(**conflict_config2), None, None, Status())  # type: ignore
+    params = fetcher._build_table_params(database)
+    assert params["tableRegex"] == "orders.*"
+    assert params["regexMode"] == "include"
+    assert "databaseSchemaRegex" not in params
+
 
 def test_filter_classifications():
     """Classification filtering still works client-side in _get_table_entities"""
