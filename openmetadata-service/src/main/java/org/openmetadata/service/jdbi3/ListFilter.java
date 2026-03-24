@@ -280,8 +280,8 @@ public class ListFilter extends Filter<ListFilter> {
         // Exact hash match — regex is not applied for these entity tables
         return String.format("%s.databaseSchemaHash = :databaseSchemaHashExact", tableName);
       }
-        hashCondition = getFqnPrefixCondition(tableName, databaseSchema, "databaseSchema");
-      }
+      hashCondition = getFqnPrefixCondition(tableName, databaseSchema, "databaseSchema");
+    }
 
     if (!nullOrEmpty(databaseSchemaRegex)) {
       regexCondition = getFqnRegexCondition(tableName, databaseSchemaRegex, "databaseSchema");
