@@ -201,14 +201,18 @@ public class TableResource extends EntityResource<Table, TableRepository> {
           String databaseSchemaParam,
       @Parameter(
               description =
-                  "Filter tables by database schema regex pattern. For better performance use in combination with database query filter",
-              schema = @Schema(type = "string", example = "snowflakeWestCoast.financeDB.*"))
+                  "Filter tables by database schema regex pattern applied to databaseSchema.name by default. "
+                      + "To apply the regex to the fully qualified name, set regexFilterByFqn=true. "
+                      + "For better performance, use this in combination with the database query filter.",
+              schema = @Schema(type = "string", example = "finance_schema_.*"))
           @QueryParam("databaseSchemaRegex")
           String databaseSchemaParamRegex,
       @Parameter(
               description =
-                  "Filter tables by table regex pattern. For better performance use in combination with database and/or databaseSchema query filter",
-              schema = @Schema(type = "string", example = "snowflakeWestCoast.financeDB.*"))
+                  "Filter tables by table regex pattern applied to the table name by default. "
+                      + "To apply the regex to the table fully qualified name, set regexFilterByFqn=true. "
+                      + "For better performance, use this in combination with the database and/or databaseSchema query filters.",
+              schema = @Schema(type = "string", example = "orders_.*"))
           @QueryParam("tableRegex")
           String tableParamRegex,
       @Parameter(
@@ -272,8 +276,8 @@ public class TableResource extends EntityResource<Table, TableRepository> {
       filter.addQueryParam("databaseSchemaRegexField", "databaseSchema.name");
     }
     if (tableParamRegex != null) {
-      filter.addQueryParam("tableParamRegex", tableParamRegex);
-      filter.addQueryParam("tableParamRegexField", "name");
+      filter.addQueryParam("tableRegex", tableParamRegex);
+      filter.addQueryParam("tableRegexField", "name");
     }
     // Only add includeEmptyTestSuite when it's explicitly false (default is true)
     if (!includeEmptyTestSuite) {

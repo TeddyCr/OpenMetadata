@@ -138,8 +138,11 @@ public class DatabaseResource extends EntityResource<Database, DatabaseRepositor
           String serviceParam,
       @Parameter(
               description =
-                  "Filter database by regex pattern. For better performance use in combination with service query filter",
-              schema = @Schema(type = "string", example = "snowflakeWestCoast.financeDB.*"))
+                  "Filter databases by regex pattern. By default, the pattern is applied to the database name field "
+                      + "(for example, 'financeDB.*'). To filter by fullyQualifiedName instead, set 'regexFilterByFqn=true' "
+                      + "and use an FQN-style pattern (for example, 'snowflakeWestCoast.financeDB.*'). For better performance, "
+                      + "use in combination with the 'service' query filter.",
+              schema = @Schema(type = "string", example = "financeDB.*"))
           @QueryParam("databaseRegex")
           String databaseParamRegex,
       @Parameter(description = "Limit the number tables returned. (1 to 1000000, default = 10)")
