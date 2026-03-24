@@ -1950,4 +1950,33 @@ public class DatabaseSchemaResourceIT extends BaseEntityIT<DatabaseSchema, Creat
         response.getData().stream().allMatch(s -> s.getName().equals("unique_regex_schema")),
         "All returned schemas should be unique_regex_schema");
   }
+
+  @Test
+  void testRegexListDatabaseSchema_excludeMode(TestNamespace ns) {
+    OpenMetadataClient client = SdkClients.adminClient();
+    DatabaseService service = DatabaseServiceTestFactory.createPostgres(ns);
+    Database database =
+        Databases.create().name("excl_mode_db").in(service.getFullyQualifiedName()).execute();
+    DatabaseSchemas.create().name("keep_schema").in(database.getFullyQualifiedName()).execute();
+    DatabaseSchemas.create().name("temp_schema").in(database.getFullyQualifiedName()).execute();
+
+    ListResponse<DatabaseSchema> response =
+        client
+            .databaseSchemas()
+            .list(
+                new ListParams()
+                    .setQueryParams(
+                        Map.of(
+                            "database",
+                            database.getFullyQualifiedName(),
+                            "databaseSchemaRegex",
+                            "temp.*",
+                            "regexMode",
+                            "exclude")));
+    List<DatabaseSchema> schemas = response.getData();
+    assertFalse(schemas.isEmpty(), "Should return schemas not matching the exclude regex");
+    assertTrue(
+        schemas.stream().noneMatch(s -> s.getName().startsWith("temp")),
+        "Excluded schemas should not appear in results");
+  }
 }

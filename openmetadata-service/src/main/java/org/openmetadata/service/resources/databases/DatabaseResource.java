@@ -56,6 +56,7 @@ import org.openmetadata.schema.type.DatabaseProfilerConfig;
 import org.openmetadata.schema.type.EntityHistory;
 import org.openmetadata.schema.type.Include;
 import org.openmetadata.schema.type.MetadataOperation;
+import org.openmetadata.schema.type.RegexMode;
 import org.openmetadata.schema.type.csv.CsvImportResult;
 import org.openmetadata.schema.utils.ResultList;
 import org.openmetadata.service.Entity;
@@ -137,7 +138,7 @@ public class DatabaseResource extends EntityResource<Database, DatabaseRepositor
           String serviceParam,
       @Parameter(
               description =
-                  "Filter database by fqn regex pattern. For better performance use in combination with service query filter",
+                  "Filter database by regex pattern. For better performance use in combination with service query filter",
               schema = @Schema(type = "string", example = "snowflakeWestCoast.financeDB.*"))
           @QueryParam("databaseRegex")
           String databaseParamRegex,
@@ -162,13 +163,34 @@ public class DatabaseResource extends EntityResource<Database, DatabaseRepositor
               schema = @Schema(implementation = Include.class))
           @QueryParam("include")
           @DefaultValue("non-deleted")
-          Include include) {
+          Include include,
+      @Parameter(
+              description =
+                  "When true, regex filters match against fullyQualifiedName instead of name. Default is false.",
+              schema = @Schema(type = "boolean", example = "false"))
+          @QueryParam("regexFilterByFqn")
+          @DefaultValue("false")
+          boolean regexFilterByFqn,
+      @Parameter(
+              description =
+                  "Controls how regex filters are applied. 'include' returns matching entities, 'exclude' returns non-matching entities. Default is 'include'.",
+              schema = @Schema(implementation = RegexMode.class))
+          @QueryParam("regexMode")
+          @DefaultValue("include")
+          RegexMode regexMode) {
     ListFilter filter = new ListFilter(include);
     if (serviceParam != null) {
       filter.addQueryParam("service", serviceParam);
     }
+    if (regexFilterByFqn) {
+      filter.addQueryParam("regexFilterByFqn", true);
+    }
+    if (regexMode != null) {
+      filter.addQueryParam("regexMode", regexMode.value());
+    }
     if (databaseParamRegex != null) {
       filter.addQueryParam("databaseRegex", databaseParamRegex);
+      filter.addQueryParam("databaseRegexField", "name");
     }
     return super.listInternal(
         uriInfo, securityContext, fieldsParam, filter, limitParam, before, after);

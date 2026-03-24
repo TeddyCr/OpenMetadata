@@ -13,6 +13,7 @@ import org.openmetadata.schema.entity.data.Table;
 import org.openmetadata.schema.type.Column;
 import org.openmetadata.schema.type.EntityStatus;
 import org.openmetadata.schema.type.Include;
+import org.openmetadata.schema.type.RegexMode;
 import org.openmetadata.schema.type.Relationship;
 import org.openmetadata.schema.utils.EntityInterfaceUtil;
 import org.openmetadata.service.Entity;
@@ -249,6 +250,9 @@ public class ListFilter extends Filter<ListFilter> {
   public String getDatabaseCondition(String tableName) {
     String database = queryParams.get("database");
     String databaseRegex = queryParams.get("databaseRegex");
+    if (nullOrEmpty(database) && nullOrEmpty(databaseRegex)) {
+      return "";
+    }
     String hashCondition = "True";
     String regexCondition = "True";
     if (!nullOrEmpty(database)) {
@@ -633,21 +637,31 @@ public class ListFilter extends Filter<ListFilter> {
         : String.format("%s.fqnHash LIKE :%s", tableName, paramName + "Hash");
   }
 
-  private String getFqnRegexCondition(String tableName, String fqnRegex, String paramName) {
-    queryParams.put(paramName + "Regex", fqnRegex);
+  private String getFqnRegexCondition(String tableName, String regex, String paramName) {
+    String fieldPath = queryParams.get(paramName + "RegexField");
+    if (nullOrEmpty(fieldPath)) {
+      fieldPath = "name";
+    }
+    if (Boolean.parseBoolean(queryParams.get("regexFilterByFqn"))) {
+      fieldPath = fieldPath.replace("name", "fullyQualifiedName");
+    }
+    boolean exclude = RegexMode.EXCLUDE.value().equalsIgnoreCase(queryParams.get("regexMode"));
+    queryParams.put(paramName + "Regex", regex);
     if (Boolean.TRUE.equals(DatasourceConfig.getInstance().isMySQL())) {
-      String fqnExpr =
+      String expr =
           tableName == null
-              ? "JSON_UNQUOTE(JSON_EXTRACT(json, '$.fullyQualifiedName'))"
-              : String.format(
-                  "JSON_UNQUOTE(JSON_EXTRACT(%s.json, '$.fullyQualifiedName'))", tableName);
-      return String.format("%s REGEXP :%s", fqnExpr, paramName + "Regex");
+              ? String.format("JSON_UNQUOTE(JSON_EXTRACT(json, '$.%s'))", fieldPath)
+              : String.format("JSON_UNQUOTE(JSON_EXTRACT(%s.json, '$.%s'))", tableName, fieldPath);
+      String operator = exclude ? "NOT REGEXP" : "REGEXP";
+      return String.format("%s %s :%s", expr, operator, paramName + "Regex");
     } else {
-      String fqnExpr =
+      String pgPath = "{" + fieldPath.replace(".", ",") + "}";
+      String expr =
           tableName == null
-              ? "json->>'fullyQualifiedName'"
-              : String.format("%s.json->>'fullyQualifiedName'", tableName);
-      return String.format("%s ~ :%s", fqnExpr, paramName + "Regex");
+              ? String.format("json #>> '%s'", pgPath)
+              : String.format("%s.json #>> '%s'", tableName, pgPath);
+      String operator = exclude ? "!~" : "~";
+      return String.format("%s %s :%s", expr, operator, paramName + "Regex");
     }
   }
 

@@ -67,6 +67,7 @@ import org.openmetadata.schema.type.EntityHistory;
 import org.openmetadata.schema.type.Include;
 import org.openmetadata.schema.type.MetadataOperation;
 import org.openmetadata.schema.type.PipelineObservability;
+import org.openmetadata.schema.type.RegexMode;
 import org.openmetadata.schema.type.SystemProfile;
 import org.openmetadata.schema.type.TableData;
 import org.openmetadata.schema.type.TableJoins;
@@ -200,13 +201,13 @@ public class TableResource extends EntityResource<Table, TableRepository> {
           String databaseSchemaParam,
       @Parameter(
               description =
-                  "Filter tables by database schema fqn regex pattern. For better performance use in combination with database query filter",
+                  "Filter tables by database schema regex pattern. For better performance use in combination with database query filter",
               schema = @Schema(type = "string", example = "snowflakeWestCoast.financeDB.*"))
           @QueryParam("databaseSchemaRegex")
           String databaseSchemaParamRegex,
       @Parameter(
               description =
-                  "Filter tables by table fqn regex pattern. For better performance use in combination with  and or databaseSchema query filter",
+                  "Filter tables by table regex pattern. For better performance use in combination with  and or databaseSchema query filter",
               schema = @Schema(type = "string", example = "snowflakeWestCoast.financeDB.*"))
           @QueryParam("tableRegex")
           String tableParamRegex,
@@ -238,7 +239,21 @@ public class TableResource extends EntityResource<Table, TableRepository> {
               schema = @Schema(implementation = Include.class))
           @QueryParam("include")
           @DefaultValue("non-deleted")
-          Include include) {
+          Include include,
+      @Parameter(
+              description =
+                  "When true, regex filters match against fullyQualifiedName instead of name. Default is false.",
+              schema = @Schema(type = "boolean", example = "false"))
+          @QueryParam("regexFilterByFqn")
+          @DefaultValue("false")
+          boolean regexFilterByFqn,
+      @Parameter(
+              description =
+                  "Controls how regex filters are applied. 'include' returns matching entities, 'exclude' returns non-matching entities. Default is 'include'.",
+              schema = @Schema(implementation = RegexMode.class))
+          @QueryParam("regexMode")
+          @DefaultValue("include")
+          RegexMode regexMode) {
     ListFilter filter = new ListFilter(include);
     if (databaseParam != null) {
       filter.addQueryParam("database", databaseParam);
@@ -246,11 +261,19 @@ public class TableResource extends EntityResource<Table, TableRepository> {
     if (databaseSchemaParam != null) {
       filter.addQueryParam("databaseSchema", databaseSchemaParam);
     }
+    if (regexFilterByFqn) {
+      filter.addQueryParam("regexFilterByFqn", true);
+    }
+    if (regexMode != null) {
+      filter.addQueryParam("regexMode", regexMode.value());
+    }
     if (databaseSchemaParamRegex != null) {
       filter.addQueryParam("databaseSchemaRegex", databaseSchemaParamRegex);
+      filter.addQueryParam("databaseSchemaRegexField", "databaseSchema.name");
     }
     if (tableParamRegex != null) {
       filter.addQueryParam("tableParamRegex", tableParamRegex);
+      filter.addQueryParam("tableParamRegexField", "name");
     }
     // Only add includeEmptyTestSuite when it's explicitly false (default is true)
     if (!includeEmptyTestSuite) {

@@ -1674,4 +1674,31 @@ public class DatabaseResourceIT extends BaseEntityIT<Database, CreateDatabase> {
         response.getData().stream().allMatch(d -> d.getName().equals("unique_regex_db")),
         "All returned databases should be unique_regex_db");
   }
+
+  @Test
+  void testRegexListDatabase_excludeMode(TestNamespace ns) {
+    OpenMetadataClient client = SdkClients.adminClient();
+    DatabaseService service = DatabaseServiceTestFactory.createPostgres(ns);
+    Databases.create().name("keep_db").in(service.getFullyQualifiedName()).execute();
+    Databases.create().name("temp_db").in(service.getFullyQualifiedName()).execute();
+
+    ListResponse<Database> response =
+        client
+            .databases()
+            .list(
+                new ListParams()
+                    .setQueryParams(
+                        Map.of(
+                            "service",
+                            service.getFullyQualifiedName(),
+                            "databaseRegex",
+                            "temp.*",
+                            "regexMode",
+                            "exclude")));
+    List<Database> databases = response.getData();
+    assertFalse(databases.isEmpty(), "Should return databases not matching the exclude regex");
+    assertTrue(
+        databases.stream().noneMatch(d -> d.getName().startsWith("temp")),
+        "Excluded databases should not appear in results");
+  }
 }

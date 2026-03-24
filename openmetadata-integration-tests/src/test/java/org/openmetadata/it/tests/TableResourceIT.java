@@ -4806,12 +4806,12 @@ public class TableResourceIT extends BaseEntityIT<Table, CreateTable> {
                             "database",
                             database.getFullyQualifiedName(),
                             "databaseSchemaRegex",
-                            database.getFullyQualifiedName() + ".custom.*")));
+                            "custom.*")));
     List<Table> tables = response.getData();
     assertFalse(tables.isEmpty(), "List response should not be empty");
     assertTrue(
         tables.stream().allMatch(t -> t.getDatabaseSchema().getName().startsWith("custom")),
-        "All returned tables should have a schema FQN starting with 'custom'");
+        "All returned tables should have a schema name starting with 'custom'");
   }
 
   @Test
@@ -5080,6 +5080,97 @@ public class TableResourceIT extends BaseEntityIT<Table, CreateTable> {
         response.getData().stream()
             .allMatch(t -> t.getDatabaseSchema().getName().equals("regexonly_schema")),
         "All returned tables should be in regexonly_schema");
+  }
+
+  @Test
+  void testRegexListTable_excludeMode(TestNamespace ns) {
+    OpenMetadataClient client = SdkClients.adminClient();
+    DatabaseService service = DatabaseServiceTestFactory.createPostgres(ns);
+    Database database =
+        Databases.create().name("exclude_db").in(service.getFullyQualifiedName()).execute();
+    DatabaseSchema schema =
+        DatabaseSchemas.create()
+            .name("exclude_schema")
+            .in(database.getFullyQualifiedName())
+            .execute();
+    client
+        .tables()
+        .createOrUpdate(
+            new CreateTable()
+                .withName("keep_this")
+                .withDatabaseSchema(schema.getFullyQualifiedName())
+                .withColumns(List.of(ColumnBuilder.of("id", "INT").build())));
+    client
+        .tables()
+        .createOrUpdate(
+            new CreateTable()
+                .withName("remove_this")
+                .withDatabaseSchema(schema.getFullyQualifiedName())
+                .withColumns(List.of(ColumnBuilder.of("id", "INT").build())));
+
+    ListResponse<Table> response =
+        client
+            .tables()
+            .list(
+                new ListParams()
+                    .setQueryParams(
+                        Map.of(
+                            "database",
+                            database.getFullyQualifiedName(),
+                            "tableRegex",
+                            "remove.*",
+                            "regexMode",
+                            "exclude")));
+    List<Table> tables = response.getData();
+    assertFalse(tables.isEmpty(), "Should return tables not matching the exclude regex");
+    assertTrue(
+        tables.stream().noneMatch(t -> t.getName().startsWith("remove")),
+        "Excluded tables should not appear in results");
+  }
+
+  @Test
+  void testRegexListTable_excludeSchemaRegex(TestNamespace ns) {
+    OpenMetadataClient client = SdkClients.adminClient();
+    DatabaseService service = DatabaseServiceTestFactory.createPostgres(ns);
+    Database database =
+        Databases.create().name("excl_schema_db").in(service.getFullyQualifiedName()).execute();
+    DatabaseSchema keepSchema =
+        DatabaseSchemas.create().name("prod_schema").in(database.getFullyQualifiedName()).execute();
+    DatabaseSchema excludeSchema =
+        DatabaseSchemas.create().name("temp_schema").in(database.getFullyQualifiedName()).execute();
+    client
+        .tables()
+        .createOrUpdate(
+            new CreateTable()
+                .withName("prod_table")
+                .withDatabaseSchema(keepSchema.getFullyQualifiedName())
+                .withColumns(List.of(ColumnBuilder.of("id", "INT").build())));
+    client
+        .tables()
+        .createOrUpdate(
+            new CreateTable()
+                .withName("temp_table")
+                .withDatabaseSchema(excludeSchema.getFullyQualifiedName())
+                .withColumns(List.of(ColumnBuilder.of("id", "INT").build())));
+
+    ListResponse<Table> response =
+        client
+            .tables()
+            .list(
+                new ListParams()
+                    .setQueryParams(
+                        Map.of(
+                            "database",
+                            database.getFullyQualifiedName(),
+                            "databaseSchemaRegex",
+                            "temp.*",
+                            "regexMode",
+                            "exclude")));
+    List<Table> tables = response.getData();
+    assertFalse(tables.isEmpty(), "Should return tables not in excluded schemas");
+    assertTrue(
+        tables.stream().noneMatch(t -> t.getDatabaseSchema().getName().startsWith("temp")),
+        "Tables in temp_schema should not appear in results");
   }
 
   // ===================================================================
