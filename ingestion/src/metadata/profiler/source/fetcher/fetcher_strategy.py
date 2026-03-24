@@ -147,13 +147,22 @@ class DatabaseFetcherStrategy(FetcherStrategy):
         status: Status,
     ) -> None:
         super().__init__(config, metadata, global_profiler_config, status)
+        self.database_filter_pattern = _build_regex_from_filter(
+            self.source_config.databaseFilterPattern
+        )
+        self.schema_filter_pattern = _build_regex_from_filter(
+            self.source_config.schemaFilterPattern
+        )
+        self.table_filter_pattern = _build_regex_from_filter(
+            self.source_config.tableFilterPattern
+        )
         self.source_config = cast(
             EntityFilterConfigInterface, self.source_config
         )  # Satisfy typechecker
 
     def _build_database_params(self) -> Dict[str, str]:
         params: Dict[str, str] = {"service": self.config.source.serviceName}  # type: ignore
-        db_filter = _build_regex_from_filter(self.source_config.databaseFilterPattern)
+        db_filter = self.database_filter_pattern
         if db_filter:
             params["databaseRegex"] = db_filter.regex
             params["regexMode"] = db_filter.mode
@@ -205,8 +214,8 @@ class DatabaseFetcherStrategy(FetcherStrategy):
             "database": database.fullyQualifiedName.root,  # type: ignore
         }
 
-        schema_filter = _build_regex_from_filter(self.source_config.schemaFilterPattern)
-        table_filter = _build_regex_from_filter(self.source_config.tableFilterPattern)
+        schema_filter = self.schema_filter_pattern
+        table_filter = self.table_filter_pattern
 
         conflicting_modes = (
             schema_filter is not None
@@ -231,8 +240,8 @@ class DatabaseFetcherStrategy(FetcherStrategy):
         return params
 
     def _has_conflicting_filter_modes(self) -> bool:
-        schema_filter = _build_regex_from_filter(self.source_config.schemaFilterPattern)
-        table_filter = _build_regex_from_filter(self.source_config.tableFilterPattern)
+        schema_filter = self.schema_filter_pattern
+        table_filter = self.table_filter_pattern
         return (
             schema_filter is not None
             and table_filter is not None
@@ -242,8 +251,8 @@ class DatabaseFetcherStrategy(FetcherStrategy):
     def _filter_deferred_excludes(self, table: Table) -> bool:
         """Apply exclude filters that were deferred to client-side
         because schema and table filters use conflicting modes."""
-        schema_filter = _build_regex_from_filter(self.source_config.schemaFilterPattern)
-        table_filter = _build_regex_from_filter(self.source_config.tableFilterPattern)
+        schema_filter = self.schema_filter_pattern
+        table_filter = self.table_filter_pattern
 
         if schema_filter and schema_filter.mode == "exclude" and table.databaseSchema:
             exclude_only = FilterPattern(

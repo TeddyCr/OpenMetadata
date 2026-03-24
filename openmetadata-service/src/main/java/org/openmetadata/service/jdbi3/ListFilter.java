@@ -253,8 +253,8 @@ public class ListFilter extends Filter<ListFilter> {
     if (nullOrEmpty(database) && nullOrEmpty(databaseRegex)) {
       return "";
     }
-    String hashCondition = "True";
-    String regexCondition = "True";
+    String hashCondition = "TRUE";
+    String regexCondition = "TRUE";
     if (!nullOrEmpty(database)) {
       hashCondition = getFqnPrefixCondition(tableName, database, "database");
     }
@@ -270,8 +270,8 @@ public class ListFilter extends Filter<ListFilter> {
     if (nullOrEmpty(databaseSchema) && nullOrEmpty(databaseSchemaRegex)) {
       return "";
     }
-    String hashCondition = "True";
-    String regexCondition = "True";
+    String hashCondition = "TRUE";
+    String regexCondition = "TRUE";
     if (!nullOrEmpty(databaseSchema)) {
       if (!nullOrEmpty(tableName)
           && (tableName.equals("table_entity") || tableName.equals("stored_procedure_entity"))) {
@@ -291,11 +291,11 @@ public class ListFilter extends Filter<ListFilter> {
   }
 
   public String getTableNameRegexCondition(String tableName) {
-    String tableParamRegex = queryParams.get("tableParamRegex");
+    String tableParamRegex = queryParams.get("tableRegex");
     if (nullOrEmpty(tableParamRegex)) {
       return "";
     }
-    return getFqnRegexCondition(tableName, tableParamRegex, "tableParam");
+    return getFqnRegexCondition(tableName, tableParamRegex, "table");
   }
 
   public String getServiceCondition(String tableName) {
