@@ -24,8 +24,9 @@ import traceback
 from abc import ABC, abstractmethod
 from typing import Optional
 
+from metadata.data_quality.api.models import TestCaseResultResponse
 from metadata.generated.schema.entity.data.table import TableData
-from metadata.generated.schema.tests.basic import TestCaseResult, TestCaseStatus
+from metadata.generated.schema.tests.basic import TestCaseStatus
 from metadata.utils.logger import test_suite_logger
 
 logger = test_suite_logger()
@@ -46,20 +47,20 @@ class FailedSampleValidatorMixin(ABC):
     def fetch_failed_rows_sample(self) -> TableData:
         raise NotImplementedError
 
-    def result_with_failed_samples(self, test_case, result: TestCaseResult) -> None:
+    def result_with_failed_samples(self, result: TestCaseResultResponse) -> None:
         """Fetch failed row samples and attach them to the result.
 
         Called by BaseTestValidator.run_validation() at the end of validation.
         Only fetches samples when:
           - test_case.computePassedFailedRowCount is True
-          - result.testCaseStatus is Failed
+          - result.testCaseResult.testCaseStatus is Failed
 
         Attaches failedRowsSample and inspectionQuery directly on the
         TestCaseResult instance for the runner/sink to pick up.
         """
         if not (
-            getattr(test_case, "computePassedFailedRowCount", False)
-            and result.testCaseStatus == TestCaseStatus.Failed
+            getattr(result.testCase, "computePassedFailedRowCount", False)
+            and result.testCaseResult.testCaseStatus == TestCaseStatus.Failed
         ):
             return
 
