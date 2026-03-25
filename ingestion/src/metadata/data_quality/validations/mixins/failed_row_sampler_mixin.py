@@ -30,11 +30,30 @@ class PandasFailedRowSamplerMixin:
 
     def _get_failed_rows_sample(self) -> Tuple[List[str], List[List[Any]]]:
         cols = next(self.runner()).columns.tolist()
-        rows = []
+        rows: List[List[Any]] = []
         for chunk in self.runner():
             prepared_chunk = chunk[cols]
             _filter = self.filter()
-            chunk_rows = prepared_chunk.query(_filter).values.tolist()
+
+            if isinstance(_filter, str):
+                # Backwards-compatible path: string expression evaluated via DataFrame.query
+                filtered_chunk = prepared_chunk.query(_filter)
+            else:
+                # New path: support boolean masks, callables, or pre-filtered DataFrames
+                criteria = _filter(prepared_chunk) if callable(_filter) else _filter
+
+                if criteria is None:
+                    # No filtering; keep full chunk
+                    filtered_chunk = prepared_chunk
+                else:
+                    # Try treating the criteria as a mask for boolean indexing first.
+                    # If that fails, assume it is already a filtered DataFrame-like object.
+                    try:
+                        filtered_chunk = prepared_chunk[criteria]
+                    except Exception:  # pylint: disable=broad-except
+                        filtered_chunk = criteria
+
+            chunk_rows = filtered_chunk.values.tolist()
             rows.extend(chunk_rows[:FAILED_ROW_SAMPLE_SIZE])
             if len(rows) >= FAILED_ROW_SAMPLE_SIZE:
                 break
