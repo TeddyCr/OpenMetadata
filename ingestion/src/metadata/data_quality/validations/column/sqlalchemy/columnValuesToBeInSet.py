@@ -155,7 +155,7 @@ class ColumnValuesToBeInSetValidator(
             "filters": [
                 (
                     self.get_column(),
-                    "not_in",
+                    "notin",
                     items,
                 )
             ],

@@ -12,7 +12,7 @@
  */
 
 import { Button, Col, Row } from 'antd';
-import { ChangeDescription } from 'generated/entity/ingestion/ingestionAgent';
+import { ChangeDescription } from '../../../../generated/tests/testCase';
 import { isEmpty, isUndefined } from 'lodash';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

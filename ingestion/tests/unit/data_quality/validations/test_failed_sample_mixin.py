@@ -9,6 +9,7 @@ Tests the orchestration logic of result_with_failed_samples():
 
 from unittest.mock import MagicMock, patch
 
+from metadata.data_quality.api.models import TestCaseResultResponse
 from metadata.data_quality.validations.mixins.failed_row_sampler_mixin import (
     FAILED_ROW_SAMPLE_SIZE,
     PandasFailedRowSamplerMixin,
@@ -47,81 +48,86 @@ def _make_test_case(compute_row_count=True):
     return tc
 
 
-def _make_result(status=TestCaseStatus.Failed):
+def _make_test_case_result(status=TestCaseStatus.Failed):
     result = MagicMock(spec=TestCaseResult)
     result.testCaseStatus = status
     return result
+
+
+def _make_response(compute_row_count=True, status=TestCaseStatus.Failed):
+    response = MagicMock(spec=TestCaseResultResponse)
+    response.testCase = _make_test_case(compute_row_count)
+    response.testCaseResult = _make_test_case_result(status)
+    response.failedRowsSample = None
+    response.inspectionQuery = None
+    return response
 
 
 class TestFailedSampleValidatorMixin:
     def test_samples_fetched_when_failed_and_flag_set(self):
         sample = TableData(columns=["a", "b"], rows=[["1", "2"]])
         validator = ConcreteValidator(sample_data=sample, inspection_query="SELECT 1")
-        test_case = _make_test_case(compute_row_count=True)
-        result = _make_result(status=TestCaseStatus.Failed)
+        response = _make_response(
+            compute_row_count=True, status=TestCaseStatus.Failed
+        )
 
-        validator.result_with_failed_samples(test_case, result)
+        validator.result_with_failed_samples(response)
 
-        assert result.failedRowsSample == sample
-        assert result.inspectionQuery == "SELECT 1"
+        assert response.failedRowsSample == sample
+        assert response.inspectionQuery == "SELECT 1"
 
     def test_no_samples_when_status_is_success(self):
         sample = TableData(columns=["a"], rows=[["1"]])
         validator = ConcreteValidator(sample_data=sample)
-        test_case = _make_test_case(compute_row_count=True)
-        result = _make_result(status=TestCaseStatus.Success)
-
-        validator.result_with_failed_samples(test_case, result)
-
-        assert (
-            not hasattr(result, "failedRowsSample") or result.failedRowsSample is None
+        response = _make_response(
+            compute_row_count=True, status=TestCaseStatus.Success
         )
+
+        validator.result_with_failed_samples(response)
+
+        assert response.failedRowsSample is None
 
     def test_no_samples_when_flag_is_false(self):
         sample = TableData(columns=["a"], rows=[["1"]])
         validator = ConcreteValidator(sample_data=sample)
-        test_case = _make_test_case(compute_row_count=False)
-        result = _make_result(status=TestCaseStatus.Failed)
-
-        validator.result_with_failed_samples(test_case, result)
-
-        assert (
-            not hasattr(result, "failedRowsSample") or result.failedRowsSample is None
+        response = _make_response(
+            compute_row_count=False, status=TestCaseStatus.Failed
         )
+
+        validator.result_with_failed_samples(response)
+
+        assert response.failedRowsSample is None
 
     def test_no_samples_when_flag_is_none(self):
         validator = ConcreteValidator(sample_data=TableData(columns=[], rows=[]))
-        test_case = MagicMock()
-        test_case.computePassedFailedRowCount = None
-        result = _make_result(status=TestCaseStatus.Failed)
+        response = _make_response(status=TestCaseStatus.Failed)
+        response.testCase.computePassedFailedRowCount = None
 
-        validator.result_with_failed_samples(test_case, result)
+        validator.result_with_failed_samples(response)
 
-        assert (
-            not hasattr(result, "failedRowsSample") or result.failedRowsSample is None
-        )
+        assert response.failedRowsSample is None
 
     def test_fetch_error_does_not_propagate(self):
         validator = ConcreteValidator(raise_on_fetch=True)
-        test_case = _make_test_case(compute_row_count=True)
-        result = _make_result(status=TestCaseStatus.Failed)
-
-        validator.result_with_failed_samples(test_case, result)
-
-        assert (
-            not hasattr(result, "failedRowsSample") or result.failedRowsSample is None
+        response = _make_response(
+            compute_row_count=True, status=TestCaseStatus.Failed
         )
+
+        validator.result_with_failed_samples(response)
+
+        assert response.failedRowsSample is None
 
     def test_inspection_query_none_by_default(self):
         sample = TableData(columns=["a"], rows=[["1"]])
         validator = ConcreteValidator(sample_data=sample, inspection_query=None)
-        test_case = _make_test_case(compute_row_count=True)
-        result = _make_result(status=TestCaseStatus.Failed)
+        response = _make_response(
+            compute_row_count=True, status=TestCaseStatus.Failed
+        )
 
-        validator.result_with_failed_samples(test_case, result)
+        validator.result_with_failed_samples(response)
 
-        assert result.failedRowsSample == sample
-        assert not hasattr(result, "inspectionQuery") or result.inspectionQuery is None
+        assert response.failedRowsSample == sample
+        assert response.inspectionQuery is None
 
 
 class TestPandasFailedRowSamplerMixin:

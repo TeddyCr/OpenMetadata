@@ -29,9 +29,11 @@ class PandasFailedRowSamplerMixin:
     """Mixin to fetch failed row samples from Pandas DataFrames"""
 
     def _get_failed_rows_sample(self) -> Tuple[List[str], List[List[Any]]]:
-        cols = next(self.runner()).columns.tolist()
+        cols = None
         rows = []
         for chunk in self.runner():
+            if cols is None:
+                cols = chunk.columns.tolist()
             prepared_chunk = chunk[cols]
             _filter = self.filter()
             chunk_rows = prepared_chunk.query(_filter).values.tolist()
@@ -39,7 +41,7 @@ class PandasFailedRowSamplerMixin:
             if len(rows) >= FAILED_ROW_SAMPLE_SIZE:
                 break
 
-        return cols, rows
+        return cols or [], rows
 
 
 class SQARowSamplerMixin:

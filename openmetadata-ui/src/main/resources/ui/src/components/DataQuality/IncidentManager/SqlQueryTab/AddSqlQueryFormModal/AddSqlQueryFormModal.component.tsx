@@ -141,7 +141,8 @@ const AddSqlQueryFormModal = ({
       closable={false}
       maskClosable={false}
       okButtonProps={{
-        disabled: !permissions.query?.Create,
+        disabled:
+          !permissions.query?.Create || !table?.id || !currentUser?.id,
         htmlType: 'submit',
         form: 'query-form',
         loading: isSaving,
