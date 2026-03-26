@@ -174,6 +174,143 @@ test.describe('Profiler Configuration Page', () => {
   });
 
   /**
+   * Sample Data Ingestion Configuration
+   * @description Validates the sample data config section: toggle rendering, default state,
+   * and the "store enables read" auto-toggle behavior.
+   */
+  test('Sample Data Ingestion Configuration', async ({ adminPage }) => {
+    const profilerConfigurationRes = adminPage.waitForResponse(
+      '/api/v1/system/settings/profilerConfiguration'
+    );
+    await sidebarClick(adminPage, SidebarItem.SETTINGS);
+    await adminPage.click('[data-testid="preferences"]');
+    await adminPage.click(
+      '[data-testid="preferences.profiler-configuration"]'
+    );
+    await profilerConfigurationRes;
+
+    /**
+     * Step: Verify sample data config section renders
+     * @description Checks both toggles are visible and default to ON.
+     */
+    await test.step('Verify sample data config section renders', async () => {
+      await expect(
+        adminPage.getByTestId('sample-data-ingestion-config')
+      ).toBeVisible();
+
+      await expect(
+        adminPage.getByTestId('store-sample-data-switch')
+      ).toBeVisible();
+
+      await expect(
+        adminPage.getByTestId('read-sample-data-switch')
+      ).toBeVisible();
+
+      await expect(
+        adminPage.getByTestId('store-sample-data-switch')
+      ).toBeChecked();
+
+      await expect(
+        adminPage.getByTestId('read-sample-data-switch')
+      ).toBeChecked();
+    });
+
+    /**
+     * Step: Toggling store ON enables read
+     * @description When read is OFF and store is toggled ON, read should auto-enable.
+     */
+    await test.step(
+      'Toggling store ON auto-enables read',
+      async () => {
+        // Turn off both toggles
+        await adminPage.getByTestId('store-sample-data-switch').click();
+        await adminPage.getByTestId('read-sample-data-switch').click();
+
+        await expect(
+          adminPage.getByTestId('store-sample-data-switch')
+        ).not.toBeChecked();
+
+        await expect(
+          adminPage.getByTestId('read-sample-data-switch')
+        ).not.toBeChecked();
+
+        // Turn store ON — read should auto-enable
+        await adminPage.getByTestId('store-sample-data-switch').click();
+
+        await expect(
+          adminPage.getByTestId('store-sample-data-switch')
+        ).toBeChecked();
+
+        await expect(
+          adminPage.getByTestId('read-sample-data-switch')
+        ).toBeChecked();
+      }
+    );
+
+    /**
+     * Step: Toggling off does not affect the other
+     * @description Turning off store should not turn off read, and vice versa.
+     */
+    await test.step(
+      'Toggling off one does not affect the other',
+      async () => {
+        // Both are ON from previous step — turn off store
+        await adminPage.getByTestId('store-sample-data-switch').click();
+
+        await expect(
+          adminPage.getByTestId('store-sample-data-switch')
+        ).not.toBeChecked();
+
+        await expect(
+          adminPage.getByTestId('read-sample-data-switch')
+        ).toBeChecked();
+
+        // Re-enable store, then turn off read
+        await adminPage.getByTestId('store-sample-data-switch').click();
+        await adminPage.getByTestId('read-sample-data-switch').click();
+
+        await expect(
+          adminPage.getByTestId('store-sample-data-switch')
+        ).toBeChecked();
+
+        await expect(
+          adminPage.getByTestId('read-sample-data-switch')
+        ).not.toBeChecked();
+      }
+    );
+
+    /**
+     * Step: Sample data config is persisted on save
+     * @description Saves with modified toggles and verifies the payload.
+     */
+    await test.step(
+      'Sample data config is included in save payload',
+      async () => {
+        // Reset to both ON
+        await adminPage.getByTestId('read-sample-data-switch').click();
+
+        const settingRes = adminPage.waitForResponse(
+          '/api/v1/system/settings'
+        );
+        await adminPage.click('[data-testid="save-button"]');
+        await settingRes.then((res) => {
+          const payload = JSON.parse(res.request().postData() ?? '');
+
+          expect(payload.config_value.sampleDataConfig).toStrictEqual({
+            storeSampleData: true,
+            readSampleData: true,
+          });
+        });
+
+        await toastNotification(
+          adminPage,
+          /Profiler Configuration updated successfully./
+        );
+      }
+    );
+  });
+
+  /**
    * Non-admin user access restriction
    * @description Verifies that non-admin users cannot access profiler configuration preferences.
    */

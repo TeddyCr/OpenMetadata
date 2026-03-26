@@ -359,6 +359,14 @@ const ProfilerConfigurationPage = () => {
                           valuePropName="checked">
                           <Switch
                             data-testid="store-sample-data-switch"
+                            onChange={(checked) => {
+                              if (checked) {
+                                form.setFieldValue(
+                                  ['sampleDataConfig', 'readSampleData'],
+                                  true
+                                );
+                              }
+                            }}
                           />
                         </Form.Item>
                       </Col>

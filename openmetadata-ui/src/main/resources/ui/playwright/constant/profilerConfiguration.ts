@@ -69,10 +69,20 @@ export const PROFILER_REQUEST_CONFIG = {
         disabled: true,
       },
     ],
+    sampleDataConfig: {
+      storeSampleData: true,
+      readSampleData: true,
+    },
   },
 };
 
 export const PROFILER_EMPTY_RESPONSE_CONFIG = {
   config_type: 'profilerConfiguration',
-  config_value: { metricConfiguration: [] },
+  config_value: {
+    metricConfiguration: [],
+    sampleDataConfig: {
+      storeSampleData: true,
+      readSampleData: true,
+    },
+  },
 };

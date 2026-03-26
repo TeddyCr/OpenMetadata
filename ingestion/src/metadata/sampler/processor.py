@@ -144,19 +144,20 @@ class SamplerProcessor(Processor):
                 cast(ProfilerConfiguration, settings.config_value) if settings else None
             )
 
-            sample_data_config = profiler_global_config.sampleDataConfig if profiler_global_config else None
+            sample_data_config = (
+                profiler_global_config.sampleDataConfig
+                if profiler_global_config
+                else None
+            )
 
             sample_data = SampleData(
                 data=sampler_interface.generate_sample_data(
-                    sample_data_config
-                    if sample_data_config
-                    else None
+                    sample_data_config if sample_data_config else None
                 ),
                 store=bool(
                     self.source_config.storeSampleData
                     and (
-                        sample_data_config is None or
-                        sample_data_config.storeSampleData
+                        sample_data_config is None or sample_data_config.storeSampleData
                     )
                 ),
             )
