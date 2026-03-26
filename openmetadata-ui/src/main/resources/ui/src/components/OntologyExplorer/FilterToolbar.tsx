@@ -12,19 +12,19 @@
  */
 
 import {
-  Autocomplete,
-  Divider,
-  Select,
-  Toggle,
-  Typography,
+    Autocomplete,
+    Divider,
+    Select,
+    Toggle,
+    Typography
 } from '@openmetadata/ui-core-components';
 import React, { useCallback, useMemo } from 'react';
 import type { Key } from 'react-aria-components';
 import { useTranslation } from 'react-i18next';
 import { ONTOLOGY_AUTOCOMPLETE_ALL_ID } from './OntologyExplorer.constants';
 import {
-  FilterToolbarProps,
-  GraphViewMode,
+    FilterToolbarProps,
+    GraphViewMode
 } from './OntologyExplorer.interface';
 
 const VIEW_MODES: { label: string; value: GraphViewMode }[] = [

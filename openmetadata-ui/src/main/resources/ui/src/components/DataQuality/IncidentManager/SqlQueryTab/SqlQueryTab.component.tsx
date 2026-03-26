@@ -12,24 +12,24 @@
  */
 
 import { Button, Col, Row } from 'antd';
-import { ChangeDescription } from '../../../../generated/tests/testCase';
 import { isEmpty, isUndefined } from 'lodash';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
+import { ChangeDescription } from '../../../../generated/tests/testCase';
 
-import Loader from '../../../common/Loader/Loader';
-import QueryViewer from '../../../common/QueryViewer/QueryViewer.component';
-import '../TestCaseResultTab/test-case-result-tab.style.less';
 import { usePermissionProvider } from '../../../../context/PermissionProvider/PermissionProvider';
 import { useTestCaseStore } from '../../../../pages/IncidentManager/IncidentManagerDetailPage/useTestCase.store';
 import {
-  getChangedEntityNewValue,
-  getChangedEntityOldValue,
-  getChangedEntityStatus,
-  getDiffByFieldName,
-  getDiffDisplayValue,
+    getChangedEntityNewValue,
+    getChangedEntityOldValue,
+    getChangedEntityStatus,
+    getDiffByFieldName,
+    getDiffDisplayValue
 } from '../../../../utils/EntityVersionUtils';
+import Loader from '../../../common/Loader/Loader';
+import QueryViewer from '../../../common/QueryViewer/QueryViewer.component';
+import '../TestCaseResultTab/test-case-result-tab.style.less';
 import AddSqlQueryFormModal from './AddSqlQueryFormModal/AddSqlQueryFormModal.component';
 
 const SqlQueryTab = () => {

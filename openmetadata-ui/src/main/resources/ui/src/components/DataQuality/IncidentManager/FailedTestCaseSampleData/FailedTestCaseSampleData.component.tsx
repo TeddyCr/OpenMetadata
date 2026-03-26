@@ -22,29 +22,29 @@ import { Link, useParams } from 'react-router-dom';
 
 import { ReactComponent as IconDelete } from '../../../../assets/svg/ic-delete.svg';
 import { ReactComponent as IconDropdown } from '../../../../assets/svg/menu.svg';
-import Loader from '../../../common/Loader/Loader';
-import { ManageButtonItemLabel } from '../../../common/ManageButtonContentItem/ManageButtonContentItem.component';
-import { RowData } from '../../../Database/SampleDataTable/RowData';
-import {
-  SampleData,
-  SampleDataType,
-} from '../../../Database/SampleDataTable/SampleData.interface';
-import EntityDeleteModal from '../../../Modals/EntityDeleteModal/EntityDeleteModal';
 import { usePermissionProvider } from '../../../../context/PermissionProvider/PermissionProvider';
 import { ResourceEntity } from '../../../../context/PermissionProvider/PermissionProvider.interface';
 import { EntityType } from '../../../../enums/entity.enum';
 import { Operation } from '../../../../generated/entity/policies/policy';
 import { TableData } from '../../../../generated/tests/testCase';
 import { TestCasePageTabs } from '../../../../pages/IncidentManager/IncidentManager.interface';
+import {
+    deleteTestCaseFailedSampleData,
+    getTestCaseFailedSampleData
+} from '../../../../rest/testAPI';
 import { getEntityDeleteMessage } from '../../../../utils/CommonUtils';
 import { getColumnNameFromEntityLink } from '../../../../utils/EntityUtils';
 import { checkPermission } from '../../../../utils/PermissionsUtils';
 import { getTestCaseDetailPagePath } from '../../../../utils/RouterUtils';
 import { showErrorToast } from '../../../../utils/ToastUtils';
+import Loader from '../../../common/Loader/Loader';
+import { ManageButtonItemLabel } from '../../../common/ManageButtonContentItem/ManageButtonContentItem.component';
+import { RowData } from '../../../Database/SampleDataTable/RowData';
 import {
-  deleteTestCaseFailedSampleData,
-  getTestCaseFailedSampleData,
-} from '../../../../rest/testAPI';
+    SampleData,
+    SampleDataType
+} from '../../../Database/SampleDataTable/SampleData.interface';
+import EntityDeleteModal from '../../../Modals/EntityDeleteModal/EntityDeleteModal';
 import './failed-test-case-sample-data.less';
 import { FailedTestCaseSampleDataProps } from './FailedTestCaseSampleData.interface';
 
