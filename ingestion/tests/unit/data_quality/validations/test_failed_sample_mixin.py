@@ -67,9 +67,7 @@ class TestFailedSampleValidatorMixin:
     def test_samples_fetched_when_failed_and_flag_set(self):
         sample = TableData(columns=["a", "b"], rows=[["1", "2"]])
         validator = ConcreteValidator(sample_data=sample, inspection_query="SELECT 1")
-        response = _make_response(
-            compute_row_count=True, status=TestCaseStatus.Failed
-        )
+        response = _make_response(compute_row_count=True, status=TestCaseStatus.Failed)
 
         validator.result_with_failed_samples(response)
 
@@ -79,9 +77,7 @@ class TestFailedSampleValidatorMixin:
     def test_no_samples_when_status_is_success(self):
         sample = TableData(columns=["a"], rows=[["1"]])
         validator = ConcreteValidator(sample_data=sample)
-        response = _make_response(
-            compute_row_count=True, status=TestCaseStatus.Success
-        )
+        response = _make_response(compute_row_count=True, status=TestCaseStatus.Success)
 
         validator.result_with_failed_samples(response)
 
@@ -90,9 +86,7 @@ class TestFailedSampleValidatorMixin:
     def test_no_samples_when_flag_is_false(self):
         sample = TableData(columns=["a"], rows=[["1"]])
         validator = ConcreteValidator(sample_data=sample)
-        response = _make_response(
-            compute_row_count=False, status=TestCaseStatus.Failed
-        )
+        response = _make_response(compute_row_count=False, status=TestCaseStatus.Failed)
 
         validator.result_with_failed_samples(response)
 
@@ -109,9 +103,7 @@ class TestFailedSampleValidatorMixin:
 
     def test_fetch_error_does_not_propagate(self):
         validator = ConcreteValidator(raise_on_fetch=True)
-        response = _make_response(
-            compute_row_count=True, status=TestCaseStatus.Failed
-        )
+        response = _make_response(compute_row_count=True, status=TestCaseStatus.Failed)
 
         validator.result_with_failed_samples(response)
 
@@ -120,9 +112,7 @@ class TestFailedSampleValidatorMixin:
     def test_inspection_query_none_by_default(self):
         sample = TableData(columns=["a"], rows=[["1"]])
         validator = ConcreteValidator(sample_data=sample, inspection_query=None)
-        response = _make_response(
-            compute_row_count=True, status=TestCaseStatus.Failed
-        )
+        response = _make_response(compute_row_count=True, status=TestCaseStatus.Failed)
 
         validator.result_with_failed_samples(response)
 
