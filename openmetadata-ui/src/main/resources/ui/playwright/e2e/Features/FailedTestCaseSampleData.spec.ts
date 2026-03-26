@@ -14,15 +14,8 @@
 import { expect, test } from '@playwright/test';
 import { PLAYWRIGHT_INGESTION_TAG_OBJ } from '../../constant/config';
 import { TableClass } from '../../support/entity/TableClass';
-import {
-  getApiContext,
-  redirectToHomePage,
-  uuid,
-} from '../../utils/common';
-import {
-  getFailedRowsData,
-  visitDataQualityTab,
-} from '../../utils/testCases';
+import { getApiContext, redirectToHomePage, uuid } from '../../utils/common';
+import { getFailedRowsData, visitDataQualityTab } from '../../utils/testCases';
 
 // use the admin user to login
 test.use({
@@ -124,10 +117,9 @@ test(
       );
       await page.click('[data-testid="confirm-button"]');
       await deleteSampleData;
-      await page.waitForSelector(
-        '[data-testid="sample-data-manage-button"]',
-        { state: 'hidden' }
-      );
+      await page.waitForSelector('[data-testid="sample-data-manage-button"]', {
+        state: 'hidden',
+      });
     });
 
     // Cleanup

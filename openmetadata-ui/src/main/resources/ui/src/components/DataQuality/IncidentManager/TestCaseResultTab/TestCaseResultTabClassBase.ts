@@ -22,9 +22,7 @@ class TestCaseResultTabClassBase {
   public getAdditionalComponents(
     _testCaseData?: TestCase
   ): Array<AdditionalComponentInterface> {
-    return [
-      { id: 'failed-sample-data', Component: FailedTestCaseSampleData },
-    ];
+    return [{ id: 'failed-sample-data', Component: FailedTestCaseSampleData }];
   }
 
   public getAlertBanner(): React.FC | null {
