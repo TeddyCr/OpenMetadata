@@ -13,6 +13,7 @@
 Validator for table custom SQL Query test case
 """
 
+import traceback
 from typing import Any, List, Optional, Tuple, cast
 
 import sqlparse
@@ -21,6 +22,7 @@ from sqlalchemy.sql import func, select
 from sqlparse.sql import Statement, Token, Where
 from sqlparse.tokens import Keyword
 
+from metadata.data_quality.api.models import TestCaseResultResponse
 from metadata.data_quality.validations.mixins.failed_row_sampler_mixin import (
     FAILED_ROW_SAMPLE_SIZE,
 )
@@ -38,7 +40,7 @@ from metadata.data_quality.validations.table.base.tableCustomSQLQuery import (
     Strategy,
 )
 from metadata.generated.schema.entity.data.table import TableData
-from metadata.generated.schema.tests.basic import TestCaseResult
+from metadata.generated.schema.tests.basic import TestCaseResult, TestCaseStatus
 from metadata.profiler.metrics.registry import Metrics
 from metadata.profiler.orm.functions.table_metric_computer import TableMetricComputer
 from metadata.profiler.processor.runner import QueryRunner
@@ -408,3 +410,23 @@ class TableCustomSQLQueryValidator(
             "sqlExpression",
             str,
         )
+
+    def result_with_failed_samples(self, result: TestCaseResultResponse) -> None:
+        """Override: tableCustomSQLQuery uses ROWS strategy check instead of
+        computePassedFailedRowCount, and sets validateColumns=False."""
+        if (
+            result.testCaseResult.testCaseStatus == TestCaseStatus.Failed
+            and self._get_strategy() == Strategy.ROWS
+        ):
+            result.validateColumns = False
+            try:
+                result.failedRowsSample = self.fetch_failed_rows_sample()
+            except Exception:
+                logger.debug(traceback.format_exc())
+                logger.error("Failed to fetch failed rows sample")
+
+            try:
+                result.inspectionQuery = self.get_inspection_query()
+            except Exception:
+                logger.debug(traceback.format_exc())
+                logger.error("Failed to get inspection query")

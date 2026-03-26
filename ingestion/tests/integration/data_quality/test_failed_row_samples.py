@@ -26,6 +26,7 @@ from metadata.ingestion.models.custom_pydantic import BaseModel
 from metadata.ingestion.ometa.ometa_api import OpenMetadata
 from metadata.utils.constants import SAMPLE_DATA_DEFAULT_COUNT
 from metadata.workflow.data_quality import TestSuiteWorkflow
+from metadata.workflow.metadata import MetadataWorkflow
 
 
 class SampleDataParameters(BaseModel):
@@ -222,11 +223,63 @@ FAILING_TEST_PARAMS = [
 
 @pytest.fixture(scope="module")
 def extra_sql_commands():
+    return []
+
+
+@pytest.fixture(scope="module")
+def sql_commands(extra_sql_commands):
     return [
         "CREATE TABLE IF NOT EXISTS bad_data_customer AS SELECT * FROM customer;",
         "UPDATE public.bad_data_customer SET email = NULL WHERE MOD(customer_id, 10) = 0;",
         "UPDATE public.bad_data_customer SET first_name = 'Steveo' WHERE first_name = 'Steve';",
-    ]
+    ] + extra_sql_commands
+
+
+@pytest.fixture(scope="module")
+def prepare_postgres(postgres_container, sql_commands):
+    """Execute SQL commands to set up test data in the dvdrental database."""
+    from sqlalchemy import create_engine, text
+    from sqlalchemy.engine.url import make_url
+
+    engine = create_engine(
+        make_url(postgres_container.get_connection_url()).set(database="dvdrental")
+    )
+    with engine.begin() as conn:
+        for command in sql_commands:
+            conn.execute(text(command))
+
+
+@pytest.fixture(scope="module")
+def ingest_postgres_metadata(
+    prepare_postgres,
+    postgres_service,
+    metadata: OpenMetadata,
+    sink_config,
+    workflow_config,
+    run_workflow,
+):
+    """Ingest metadata after preparing the database with test data."""
+    wf_config = {
+        "source": {
+            "type": postgres_service.connection.config.type.value.lower(),
+            "serviceName": postgres_service.fullyQualifiedName.root,
+            "serviceConnection": postgres_service.connection.model_copy(
+                update={
+                    "config": postgres_service.connection.config.model_copy(
+                        update={"ingestAllDatabases": True}
+                    )
+                }
+            ),
+            "sourceConfig": {
+                "config": {
+                    "schemaFilterPattern": {"excludes": ["information_schema"]},
+                }
+            },
+        },
+        "sink": sink_config,
+        "workflowConfig": workflow_config,
+    }
+    run_workflow(MetadataWorkflow, wf_config)
 
 
 def _run_test_suite(

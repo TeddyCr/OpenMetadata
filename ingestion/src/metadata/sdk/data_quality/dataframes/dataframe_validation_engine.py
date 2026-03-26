@@ -84,7 +84,8 @@ class DataFrameValidationEngine:
         )
 
         try:
-            return validator.run_validation()
+            result = validator.run_validation()
+            return result.testCaseResult
         except Exception as err:
             message = (
                 f"Error executing {test_case.testDefinition.fullyQualifiedName} - {err}"
