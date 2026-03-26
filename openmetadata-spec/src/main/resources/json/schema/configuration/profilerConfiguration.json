@@ -74,7 +74,7 @@
     "sampleDataIngestionConfig": {
       "type": "object",
       "javaType": "org.openmetadata.schema.api.configuration.profiler.SampleDataIngestionConfig",
-      "description": "This schema defines the parameters that can be passed for sample data collection.",
+      "description": "Define the configuration for sample data ingestion at the platform level. This configuration will override the source-level configuration for sample data collection.",
       "properties": {
         "storeSampleData": {
           "title": "Enable Storing of Sample Data",

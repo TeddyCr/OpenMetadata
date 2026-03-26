@@ -16,6 +16,24 @@
  */
 export interface ProfilerConfiguration {
     metricConfiguration?: MetricConfigurationDefinition[];
+    sampleDataConfig?:    SampleDataIngestionConfig;
+}
+
+/**
+ * This schema defines the parameters that can be passed for sample data collection.
+ */
+export interface SampleDataIngestionConfig {
+    /**
+     * Allows OpenMetadata to read the sample data. This setting won't save the sample data
+     * but sample data will temporally be brought in OpenMetadata infrastructure for processing.
+     * If reading is disabled but storing is enabled, reading will be enabled by default.
+     */
+    readSampleData?: boolean;
+    /**
+     * Allows OpenMetadata to store the sample data. This setting will override the source
+     * configuration.
+     */
+    storeSampleData?: boolean;
 }
 
 /**
