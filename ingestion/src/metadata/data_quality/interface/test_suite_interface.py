@@ -133,7 +133,12 @@ class TestSuiteInterface(ABC):
         validator_builder.set_runtime_params(runtime_params_setters)
         validator: BaseTestValidator = validator_builder.validator
         try:
-            return validator.run_validation()
+            test_result = validator.run_validation()
+            response = TestCaseResultResponse(
+                testCaseResult=test_result, testCase=test_case
+            )
+            validator.result_with_failed_samples(response)
+            return response
         except Exception as err:
             message = (
                 f"Error executing {test_case.testDefinition.fullyQualifiedName} - {err}"

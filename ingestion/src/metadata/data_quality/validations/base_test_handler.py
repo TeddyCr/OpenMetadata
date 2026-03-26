@@ -135,7 +135,7 @@ class BaseTestValidator(ABC):
             return DEFAULT_TOP_DIMENSIONS
         return min(value, MAX_TOP_DIMENSIONS)
 
-    def run_validation(self) -> TestCaseResultResponse:
+    def run_validation(self) -> TestCaseResult:
         """Template method defining the validation flow with optional dimensional analysis
 
         This method orchestrates the overall validation process:
@@ -187,13 +187,7 @@ class BaseTestValidator(ABC):
                 )
                 logger.debug(traceback.format_exc())
 
-        result: TestCaseResultResponse = TestCaseResultResponse(
-            testCaseResult=test_result, testCase=self.test_case
-        )
-
-        self.result_with_failed_samples(result)
-
-        return result
+        return test_result
 
     def result_with_failed_samples(self, result: TestCaseResultResponse) -> None:
         """Hook for failed row sampling. No-op by default.
