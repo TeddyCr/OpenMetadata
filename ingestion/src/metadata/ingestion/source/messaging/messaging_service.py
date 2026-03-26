@@ -13,7 +13,7 @@ Base class for ingesting messaging services
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Iterable, List, Optional, Set
+from typing import Any, Iterable, List, Optional, Set, cast
 
 from pydantic import BaseModel, Field
 from typing_extensions import Annotated
@@ -41,6 +41,10 @@ from metadata.ingestion.models.topology import (
     ServiceTopology,
     TopologyContextManager,
     TopologyNode,
+)
+from metadata.generated.schema.configuration.profilerConfiguration import (
+    ProfilerConfiguration,
+    SampleDataIngestionConfig,
 )
 from metadata.ingestion.ometa.ometa_api import OpenMetadata
 from metadata.ingestion.source.connections import get_connection, test_connection_common
@@ -152,6 +156,31 @@ class MessagingServiceSource(TopologyRunnerMixin, Source, ABC):
     @property
     def name(self) -> str:
         return self.service_connection.type.name
+
+    def _is_sample_data_globally_disabled(self) -> bool:
+        """Check if sample data is globally disabled via profiler configuration.
+
+        Returns True if both storing and reading of sample data are disabled
+        in the global profiler config, meaning sample data should not be fetched.
+        """
+        try:
+            settings = self.metadata.get_profiler_config_settings()
+            if not settings or not settings.config_value:
+                return False
+            profiler_config = cast(ProfilerConfiguration, settings.config_value)
+            sample_data_config = profiler_config.sampleDataConfig
+            if sample_data_config is None:
+                return False
+            sample_data_config = cast(SampleDataIngestionConfig, sample_data_config)
+            if not sample_data_config.storeSampleData:
+                logger.info(
+                    "Global profiler configuration disables both storing and reading "
+                    "of sample data. Overriding source configuration."
+                )
+                return True
+        except Exception as exc:
+            logger.debug(f"Could not fetch global profiler config: {exc}")
+        return False
 
     @abstractmethod
     def yield_topic(self, topic_details: Any) -> Iterable[Either[CreateTopicRequest]]:

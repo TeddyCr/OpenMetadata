@@ -15,6 +15,7 @@ import traceback
 from copy import deepcopy
 from typing import Optional, Type, cast
 
+from metadata.generated.schema.configuration.profilerConfiguration import ProfilerConfiguration
 from metadata.generated.schema.entity.data.database import Database
 from metadata.generated.schema.entity.data.table import Table
 from metadata.generated.schema.entity.services.connections.database.bigQueryConnection import (
@@ -31,6 +32,7 @@ from metadata.generated.schema.metadataIngestion.databaseServiceAutoClassificati
 from metadata.generated.schema.metadataIngestion.workflow import (
     OpenMetadataWorkflowConfig,
 )
+from metadata.generated.schema.settings.settings import Settings
 from metadata.ingestion.api.models import Either
 from metadata.ingestion.api.parser import parse_workflow_config_gracefully
 from metadata.ingestion.api.step import Step
@@ -135,8 +137,17 @@ class SamplerProcessor(Processor):
                 default_sample_config=SampleConfig(),
                 default_sample_data_count=self.source_config.sampleDataCount,
             )
+
+            profiler_global_config = self.metadata.get_profiler_config_settings()
+            profiler_global_config: Optional[ProfilerConfiguration] = (
+                cast(ProfilerConfiguration, profiler_global_config)
+                if profiler_global_config
+                else None
+            )
             sample_data = SampleData(
-                data=sampler_interface.generate_sample_data(),
+                data=sampler_interface.generate_sample_data(
+                    profiler_global_config.sampleDataConfig if profiler_global_config else None
+                ),
                 store=self.source_config.storeSampleData,
             )
             sampler_interface.close()
