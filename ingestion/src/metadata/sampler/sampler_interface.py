@@ -15,7 +15,9 @@ import traceback
 from abc import ABC, abstractmethod
 from typing import Any, List, Optional, Set, Union
 
-from metadata.generated.schema.configuration.profilerConfiguration import ProfilerConfiguration, SampleDataIngestionConfig
+from metadata.generated.schema.configuration.profilerConfiguration import (
+    SampleDataIngestionConfig,
+)
 from metadata.generated.schema.entity.data.database import Database
 from metadata.generated.schema.entity.data.databaseSchema import DatabaseSchema
 from metadata.generated.schema.entity.data.table import (
@@ -34,7 +36,6 @@ from metadata.generated.schema.entity.services.databaseService import DatabaseCo
 from metadata.generated.schema.metadataIngestion.databaseServiceProfilerPipeline import (
     ProcessingEngine,
 )
-from metadata.generated.schema.settings.settings import Settings
 from metadata.ingestion.ometa.ometa_api import OpenMetadata
 from metadata.profiler.api.models import TableConfig
 from metadata.profiler.processor.sample_data_handler import upload_sample_data
@@ -242,7 +243,9 @@ class SamplerInterface(ABC):
         return value
 
     @calculate_execution_time(store=False)
-    def generate_sample_data(self, sample_data_config: Optional[SampleDataIngestionConfig] = None) -> TableData:
+    def generate_sample_data(
+        self, sample_data_config: Optional[SampleDataIngestionConfig] = None
+    ) -> TableData:
         """Fetch and ingest sample data
 
         Returns:
@@ -251,9 +254,14 @@ class SamplerInterface(ABC):
         if sample_data_config is None:
             # if there is no global config, default to storing and reading sample data to ensure backward compatibility
             # and availability of sample data for downstream steps
-            sample_data_config = SampleDataIngestionConfig(storeSampleData=True, readSampleData=True)
+            sample_data_config = SampleDataIngestionConfig(
+                storeSampleData=True, readSampleData=True
+            )
 
-        if not sample_data_config.storeSampleData and not sample_data_config.readSampleData:
+        if (
+            not sample_data_config.storeSampleData
+            and not sample_data_config.readSampleData
+        ):
             logger.info(
                 "Both storing and reading of sample data are disabled. Skipping sample data generation."
             )

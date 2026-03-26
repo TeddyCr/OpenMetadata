@@ -20,6 +20,10 @@ from typing_extensions import Annotated
 
 from metadata.generated.schema.api.data.createTopic import CreateTopicRequest
 from metadata.generated.schema.api.lineage.addLineage import AddLineageRequest
+from metadata.generated.schema.configuration.profilerConfiguration import (
+    ProfilerConfiguration,
+    SampleDataIngestionConfig,
+)
 from metadata.generated.schema.entity.data.topic import Topic, TopicSampleData
 from metadata.generated.schema.entity.services.messagingService import (
     MessagingConnection,
@@ -41,10 +45,6 @@ from metadata.ingestion.models.topology import (
     ServiceTopology,
     TopologyContextManager,
     TopologyNode,
-)
-from metadata.generated.schema.configuration.profilerConfiguration import (
-    ProfilerConfiguration,
-    SampleDataIngestionConfig,
 )
 from metadata.ingestion.ometa.ometa_api import OpenMetadata
 from metadata.ingestion.source.connections import get_connection, test_connection_common
