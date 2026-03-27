@@ -157,11 +157,12 @@ class MessagingServiceSource(TopologyRunnerMixin, Source, ABC):
     def name(self) -> str:
         return self.service_connection.type.name
 
-    def _is_sample_data_globally_disabled(self) -> bool:
-        """Check if sample data is globally disabled via profiler configuration.
+    def _is_sample_data_storing_globally_disabled(self) -> bool:
+        """Check if storing sample data is globally disabled via profiler configuration.
 
-        Returns True if both storing and reading of sample data are disabled
-        in the global profiler config, meaning sample data should not be fetched.
+        Returns True if storing of sample data is disabled in the global
+        profiler config, meaning sample data should not be fetched for
+        messaging sources.
         """
         try:
             settings = self.metadata.get_profiler_config_settings()
@@ -174,7 +175,7 @@ class MessagingServiceSource(TopologyRunnerMixin, Source, ABC):
             sample_data_config = cast(SampleDataIngestionConfig, sample_data_config)
             if not sample_data_config.storeSampleData:
                 logger.info(
-                    "Global profiler configuration disables both storing and reading "
+                    "Global profiler configuration disables storing "
                     "of sample data. Overriding source configuration."
                 )
                 return True

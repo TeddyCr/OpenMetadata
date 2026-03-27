@@ -57,7 +57,6 @@ export const PROFILER_REQUEST_CONFIG = {
       {
         dataType: 'AGG_STATE',
         metrics,
-        disabled: false,
       },
       {
         dataType: 'AGGREGATEFUNCTION',

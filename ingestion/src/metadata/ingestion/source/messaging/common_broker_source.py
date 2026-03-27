@@ -81,7 +81,7 @@ class CommonBrokerSource(MessagingServiceSource, ABC):
     ):
         super().__init__(config, metadata)
         self.generate_sample_data = self.config.sourceConfig.config.generateSampleData
-        if self.generate_sample_data and self._is_sample_data_globally_disabled():
+        if self.generate_sample_data and self._is_sample_data_storing_globally_disabled():
             self.generate_sample_data = False
         self.service_connection = self.config.serviceConnection.root.config
         self.admin_client = self.connection.admin_client

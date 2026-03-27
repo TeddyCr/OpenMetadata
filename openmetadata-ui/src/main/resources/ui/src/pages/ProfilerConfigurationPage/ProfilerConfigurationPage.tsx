@@ -136,8 +136,9 @@ const ProfilerConfigurationPage = () => {
         SettingType.ProfilerConfiguration
       );
 
-      const configValue =
-        data?.config_value as ProfilerConfiguration | undefined;
+      const configValue = data?.config_value as
+        | ProfilerConfiguration
+        | undefined;
 
       form.setFieldsValue({
         metricConfiguration: isEmpty(configValue?.metricConfiguration)
@@ -174,9 +175,7 @@ const ProfilerConfigurationPage = () => {
         id="profiler-config"
         layout="vertical"
         onFinish={handleSubmit}>
-        <Row
-          className="profiler-configuration-page-container"
-          gutter={[0, 24]}>
+        <Row className="profiler-configuration-page-container" gutter={[0, 24]}>
           <Col span={24}>
             <PageHeader
               data={{
@@ -325,9 +324,7 @@ const ProfilerConfigurationPage = () => {
                 header={
                   <PageHeader
                     data={{
-                      header: t(
-                        'label.sample-data-ingestion-configuration'
-                      ),
+                      header: t('label.sample-data-ingestion-configuration'),
                       subHeader: t(
                         'message.sample-data-ingestion-config-description'
                       ),
@@ -339,18 +336,13 @@ const ProfilerConfigurationPage = () => {
                   data-testid="sample-data-ingestion-config"
                   gutter={[0, 24]}>
                   <Col span={24}>
-                    <Row
-                      align="middle"
-                      justify="space-between"
-                      wrap={false}>
+                    <Row align="middle" justify="space-between" wrap={false}>
                       <Col flex="auto">
                         <Typography.Text strong>
                           {t('label.enable-storing-of-sample-data')}
                         </Typography.Text>
                         <Typography.Paragraph className="text-grey-muted m-b-0">
-                          {t(
-                            'message.enable-storing-sample-data-description'
-                          )}
+                          {t('message.enable-storing-sample-data-description')}
                         </Typography.Paragraph>
                       </Col>
                       <Col className="p-l-lg" flex="none">
@@ -373,27 +365,20 @@ const ProfilerConfigurationPage = () => {
                     </Row>
                   </Col>
                   <Col span={24}>
-                    <Row
-                      align="middle"
-                      justify="space-between"
-                      wrap={false}>
+                    <Row align="middle" justify="space-between" wrap={false}>
                       <Col flex="auto">
                         <Typography.Text strong>
                           {t('label.enable-reading-of-sample-data')}
                         </Typography.Text>
                         <Typography.Paragraph className="text-grey-muted m-b-0">
-                          {t(
-                            'message.enable-reading-sample-data-description'
-                          )}
+                          {t('message.enable-reading-sample-data-description')}
                         </Typography.Paragraph>
                       </Col>
                       <Col className="p-l-lg" flex="none">
                         <Form.Item
                           name={['sampleDataConfig', 'readSampleData']}
                           valuePropName="checked">
-                          <Switch
-                            data-testid="read-sample-data-switch"
-                          />
+                          <Switch data-testid="read-sample-data-switch" />
                         </Form.Item>
                       </Col>
                     </Row>
@@ -405,9 +390,7 @@ const ProfilerConfigurationPage = () => {
 
           <Col span={24}>
             <div className="d-flex justify-end gap-2">
-              <Button
-                data-testid="cancel-button"
-                onClick={() => navigate(-1)}>
+              <Button data-testid="cancel-button" onClick={() => navigate(-1)}>
                 {t('label.cancel')}
               </Button>
               <Button
