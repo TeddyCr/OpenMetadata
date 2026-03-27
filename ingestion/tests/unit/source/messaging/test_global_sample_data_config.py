@@ -41,7 +41,9 @@ class TestIsSampleDataGloballyDisabled:
     def test_returns_false_when_no_settings(self, mock_messaging_source):
         mock_messaging_source.metadata.get_profiler_config_settings.return_value = None
 
-        assert mock_messaging_source._is_sample_data_storing_globally_disabled() is False
+        assert (
+            mock_messaging_source._is_sample_data_storing_globally_disabled() is False
+        )
 
     def test_returns_false_when_settings_has_no_config_value(
         self, mock_messaging_source
@@ -52,7 +54,9 @@ class TestIsSampleDataGloballyDisabled:
             settings
         )
 
-        assert mock_messaging_source._is_sample_data_storing_globally_disabled() is False
+        assert (
+            mock_messaging_source._is_sample_data_storing_globally_disabled() is False
+        )
 
     def test_returns_false_when_no_sample_data_config(self, mock_messaging_source):
         profiler_config = ProfilerConfiguration(
@@ -66,7 +70,9 @@ class TestIsSampleDataGloballyDisabled:
             settings
         )
 
-        assert mock_messaging_source._is_sample_data_storing_globally_disabled() is False
+        assert (
+            mock_messaging_source._is_sample_data_storing_globally_disabled() is False
+        )
 
     def test_returns_true_when_store_disabled(self, mock_messaging_source):
         sample_config = SampleDataIngestionConfig(
@@ -96,7 +102,9 @@ class TestIsSampleDataGloballyDisabled:
             settings
         )
 
-        assert mock_messaging_source._is_sample_data_storing_globally_disabled() is False
+        assert (
+            mock_messaging_source._is_sample_data_storing_globally_disabled() is False
+        )
 
     def test_returns_false_when_store_enabled_read_disabled(
         self, mock_messaging_source
@@ -113,14 +121,18 @@ class TestIsSampleDataGloballyDisabled:
             settings
         )
 
-        assert mock_messaging_source._is_sample_data_storing_globally_disabled() is False
+        assert (
+            mock_messaging_source._is_sample_data_storing_globally_disabled() is False
+        )
 
     def test_returns_false_on_api_exception(self, mock_messaging_source):
         mock_messaging_source.metadata.get_profiler_config_settings.side_effect = (
             Exception("API error")
         )
 
-        assert mock_messaging_source._is_sample_data_storing_globally_disabled() is False
+        assert (
+            mock_messaging_source._is_sample_data_storing_globally_disabled() is False
+        )
 
     def test_defaults_are_both_enabled(self, mock_messaging_source):
         sample_config = SampleDataIngestionConfig()
@@ -133,4 +145,6 @@ class TestIsSampleDataGloballyDisabled:
             settings
         )
 
-        assert mock_messaging_source._is_sample_data_storing_globally_disabled() is False
+        assert (
+            mock_messaging_source._is_sample_data_storing_globally_disabled() is False
+        )

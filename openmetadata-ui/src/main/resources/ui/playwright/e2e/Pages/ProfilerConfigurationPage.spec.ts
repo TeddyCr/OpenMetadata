@@ -52,6 +52,22 @@ base.beforeAll(async ({ browser }) => {
   await afterAction();
 });
 
+const removeAllMetricConfigRows = async (page: Page) => {
+  await page.getByTestId('add-fields').waitFor();
+  try {
+    await page
+      .locator('[data-testid^="remove-filter-"]')
+      .first()
+      .waitFor({ timeout: 1000 });
+    const rows = page.locator('[data-testid^="remove-filter-"]');
+    while ((await rows.count()) > 0) {
+      await rows.first().click();
+    }
+  } catch {
+    // No existing rows to clean up
+  }
+};
+
 test.describe('Profiler Configuration Page', () => {
   /**
    * Admin user profiler configuration
@@ -72,22 +88,7 @@ test.describe('Profiler Configuration Page', () => {
      * @description Verifies form validation for required Data Type field.
      */
     await test.step('Verify validation', async () => {
-      // Wait for form to render, then remove any leftover rows
-      await adminPage.getByTestId('add-fields').waitFor();
-      try {
-        await adminPage
-          .locator('[data-testid^="remove-filter-"]')
-          .first()
-          .waitFor({ timeout: 1000 });
-        const removeButtons = adminPage.locator(
-          '[data-testid^="remove-filter-"]'
-        );
-        while ((await removeButtons.count()) > 0) {
-          await removeButtons.first().click();
-        }
-      } catch {
-        // No existing rows to clean up
-      }
+      await removeAllMetricConfigRows(adminPage);
 
       await adminPage.click('[data-testid="add-fields"]');
       await adminPage.click('[data-testid="save-button"]');
@@ -112,22 +113,7 @@ test.describe('Profiler Configuration Page', () => {
       );
       await profilerConfigurationRes;
 
-      // Wait for form to render, then remove any leftover rows
-      await adminPage.getByTestId('add-fields').waitFor();
-      try {
-        await adminPage
-          .locator('[data-testid^="remove-filter-"]')
-          .first()
-          .waitFor({ timeout: 1000 });
-        const existingRows = adminPage.locator(
-          '[data-testid^="remove-filter-"]'
-        );
-        while ((await existingRows.count()) > 0) {
-          await existingRows.first().click();
-        }
-      } catch {
-        // No existing rows to clean up
-      }
+      await removeAllMetricConfigRows(adminPage);
 
       await adminPage.click('[data-testid="add-fields"]');
       await adminPage.click('#metricConfiguration_0_dataType');
